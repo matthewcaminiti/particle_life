@@ -1,10 +1,12 @@
-import {coolFunc} from './mything'
+import * as c from './canvas';
 
-const jah = (): number => {
-	console.log("jaaaaah HOT LOAD? JAH")
-	coolFunc()
+const main = () => {
+	let gl = c.loadCanvasContext()
 
-	return 0
+	if (!gl) {
+		console.error("Failed to load WebGL context.")
+		return;
+	}
 }
 
-jah()
+main()
