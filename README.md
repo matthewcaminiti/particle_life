@@ -10,5 +10,11 @@ sheeeeeeesh
 
 #### Development
 
+- started dev with node v18.14.0
 - using `live-server` to hot-load the local files
-- use `npm run dev` for webpack's hot reload (re-transpile .ts -> .js)
+- use `npm run dev` for webpack's hot reload (re-transpiles .ts -> .js)
+
+
+#### References
+
+- [typescript setup with webpack](https://webpack.js.org/guides/typescript/)
