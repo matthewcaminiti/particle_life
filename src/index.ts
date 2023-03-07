@@ -1,5 +1,5 @@
 import * as c from './canvas';
-import {rect} from "./geo"
+import {rect, circle} from "./geo"
 
 const main = () => {
 	const canvas = document.querySelector("#canvas") as HTMLCanvasElement | null;
@@ -82,27 +82,26 @@ void main() {
 	let fpsWalkingSum = 0
 	let fpsSampleCount = 0
 
-	/* let speed = 100; */
-	/**/
-	/* let positions = [ */
-	/* 	0, 0, */
-	/* 	100, 0, */
-	/* 	100, 100, */
-	/**/
-	/* 	0, 0, */
-	/* 	0, 100, */
-	/* 	100, 100, */
-	/* ] */
-
 	const squares = Array(5).fill(0).map(() => new rect(
 		Math.random() * (gl.canvas.width - 10) + 10,
 		Math.random() * (gl.canvas.height - 10) + 10,
 		Math.floor(Math.random() * 100 + 10),
 		Math.floor(Math.random() * 100 + 10),
-		Math.floor(Math.random() * 500 + 100)
+		Math.floor(Math.random() * 500 + 100),
+		Math.floor(Math.random() * 350 + 10)
 	))
 
-	/* let jah = new rect(gl.canvas.width / 2, gl.canvas.height / 2, 100, 100, 300) */
+	const circles = Array(15).fill(0).map(() => {
+		const r = Math.floor(Math.random() * 50 + 10)
+		return new circle(
+			Math.random() * (gl.canvas.width - 10) + 10,
+			Math.random() * (gl.canvas.height - 10) + 10,
+			r,
+			Math.floor(r * 0.8) <= 10 ? 10 : Math.floor(r * 0.8),
+			{x: Math.random() * 300 + 100, y: Math.random() + 300 + 100}
+		)
+	})
+
 	gl.useProgram(program)
 
 	// Set the resolution uniform
@@ -111,7 +110,7 @@ void main() {
 
 	let then = 0
 	const drawScene = (time: number) => {
-		time /= 1000
+		time *= 0.001
 		const deltaTime = time - then
 		then = time
 
@@ -133,11 +132,39 @@ void main() {
 		gl.clearColor(0, 0, 0, 0)
 		gl.clear(gl.COLOR_BUFFER_BIT)
 
-		squares.forEach((s) => {
-			s.update(Math.abs(deltaTime), gl.canvas.width, gl.canvas.height)
+		/* squares.forEach((s) => { */
+		/* 	s.update(Math.abs(deltaTime), gl.canvas.width, gl.canvas.height) */
+		/**/
+		/* 	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer) */
+		/* 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(s.positions), gl.STATIC_DRAW) */
+		/**/
+		/* 	const size = 2 */
+		/* 	const type = gl.FLOAT */
+		/* 	const normalize = false */
+		/* 	const stride = 0 */
+		/* 	const offset = 0 */
+		/* 	gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset) */
+		/* 	gl.enableVertexAttribArray(positionAttributeLocation) */
+		/**/
+		/* 	gl.drawArrays(gl.TRIANGLES, offset, s.nIndices) */
+		/* }) */
+
+		for (let i = 0; i < circles.length; i ++) {
+			const c = circles[i]
+
+			for (let j = 0; j < circles.length; j++) {
+				if (j === i) continue
+
+				if (c.doesCollide(Math.abs(deltaTime), circles[j])) {
+					c.collide(circles[j])
+					break
+				}
+			}
+
+			c.update(Math.abs(deltaTime), gl.canvas.width, gl.canvas.height)
 
 			gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(s.positions), gl.STATIC_DRAW)
+			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(c.indices), gl.STATIC_DRAW)
 
 			const size = 2
 			const type = gl.FLOAT
@@ -147,10 +174,8 @@ void main() {
 			gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset)
 			gl.enableVertexAttribArray(positionAttributeLocation)
 
-			const primitiveType = gl.TRIANGLES
-			const nIndices = 6
-			gl.drawArrays(primitiveType, offset, nIndices)
-		})
+			gl.drawArrays(gl.TRIANGLES, offset, c.indices.length)
+		}
 
 		requestAnimationFrame(drawScene)
 	}
