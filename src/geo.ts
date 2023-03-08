@@ -69,17 +69,23 @@ export class circle {
 	y: number
 	r: number
 	steps: number
+	color: [number, number, number, number]
 	velocity: coord
 	indices: Array<number>
 
-	constructor(x: number, y: number, r: number, steps: number, velocity: coord) {
+	constructor(x: number, y: number, r: number, steps: number, color: [number, number, number, number], velocity: coord) {
 		this.x = x
 		this.y = y
 		this.r = r
 		this.steps = steps
+		this.color = color
 		this.velocity = velocity
 
 		this.indices = this.getIndices()
+	}
+
+	get speed() {
+		return Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2)
 	}
 
 	getIndices(): Array<number> {
@@ -91,6 +97,7 @@ export class circle {
 			let newX = this.r * Math.cos(degToRad((360/this.steps) * i)) + this.x
 			let newY = this.r * Math.sin(degToRad((360/this.steps) * i)) + this.y
 			indices.push(this.x, this.y, prevPoint.x, prevPoint.y, newX, newY)
+
 			prevPoint.x = newX
 			prevPoint.y = newY
 		}
@@ -138,7 +145,7 @@ export class circle {
 
 	collide(other: circle) {
 		const jah = this.velocity
-		this.velocity = other.velocity
-		other.velocity = jah
+		this.velocity = {x: other.velocity.x * .8, y: other.velocity.y * .8}
+		other.velocity = {x: jah.x * .8, y: jah.y * .8}
 	}
 }
