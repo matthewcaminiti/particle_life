@@ -125,16 +125,37 @@ void main() {
 		)
 	})
 
+	/* const circles = [ */
+	/* 	new circle( */
+	/* 		400, */
+	/* 		gl.canvas.height/2, */
+	/* 		30, */
+	/* 		30*.8, */
+	/* 		[1, 0, 0, 1], */
+	/* 		{x: 50, y: 0} */
+	/* 	), */
+	/* 	new circle( */
+	/* 		600, */
+	/* 		gl.canvas.height/2, */
+	/* 		30, */
+	/* 		30*.8, */
+	/* 		[0, 0, 1, 1], */
+	/* 		{x: -50, y: 0} */
+	/* 	) */
+	/* ] */
+
 	gl.useProgram(program)
 
 	// Set the resolution uniform
 	const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution")
 	gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
 
-	const nHorizontalParitions = 100
-	const nVerticalPartitions = 50
-	const cellWidth = gl.canvas.width/nHorizontalParitions
-	const cellHeight = gl.canvas.height/nVerticalPartitions
+	const maxDiam = circles.reduce((acc, curr) => curr.r > acc ? curr.r : acc, 0) * 2
+	const cellWidth = Math.max(maxDiam, gl.canvas.width/100) // 100, arbitrary ceiling for performance reasons
+	const cellHeight = Math.max(maxDiam, gl.canvas.height/50) // 50, arbitrary ceiling for performance reasons
+	const nHorizontalParitions = Math.floor(gl.canvas.width/cellWidth)
+	const nVerticalPartitions = Math.floor(gl.canvas.height/cellHeight)
+	console.log(`Cells: num: (${nHorizontalParitions}, ${nVerticalPartitions}), size: (${cellWidth}, ${cellHeight})`)
 
 	let sampleCount = 0
 	let then = 0
@@ -164,9 +185,15 @@ void main() {
 
 			let col = Math.floor(c.x / cellWidth)
 			let row = Math.floor(c.y / cellHeight)
-			cells[row * nHorizontalParitions + col].push(i)
+			if (row * nHorizontalParitions + col < 0)
+				cells[0].push(i)
+			else if (row * nHorizontalParitions + col >= cells.length)
+				cells[cells.length - 1].push(i)
+			else
+				cells[row * nHorizontalParitions + col].push(i)
 		}
 
+		let hasCollided = Array(circles.length).fill(0)
 		for (let i = 1; i < nHorizontalParitions - 1; i++) {
 			for (let j = 1; j < nVerticalPartitions - 1; j++) {
 				// check every cell's neighbours, get all circle idx's and check collision
@@ -178,13 +205,17 @@ void main() {
 				]
 
 				for (let a = 0; a < circleIndices.length; a++) {
+					if (hasCollided[circleIndices[a]]) continue
+
 					const c = circles[circleIndices[a]]
 
 					for (let b = 0; b < circleIndices.length; b++) {
-						if (circleIndices[a] === circleIndices[b]) continue
+						if (circleIndices[a] === circleIndices[b] || hasCollided[circleIndices[b]]) continue
 						const _c = circles[circleIndices[b]]
 
 						if (c.doesCollide(Math.abs(deltaTime), _c)) {
+							hasCollided[circleIndices[a]] = 1
+							hasCollided[circleIndices[b]] = 1
 							c.collide(_c)
 							break
 						}

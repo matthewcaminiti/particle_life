@@ -2,11 +2,20 @@ const degToRad = (deg: number): number => {
 	return deg * Math.PI / 180
 }
 
-const radToDeg = (rad: number): number => {
-	return rad * 180 / Math.PI
+const v2 = {
+	magnitude(v: vec2): number {
+		return Math.sqrt(v.x ** 2 + v.y ** 2)
+	},
+	normalize(v: vec2): vec2 {
+		const mag = v2.magnitude(v)
+		return mag ? {x: v.x / mag, y: v.y / mag} : {x: 0, y: 0}
+	},
+	add(v1: vec2, v2: vec2): vec2 {
+		return {x: v1.x + v2.x, y: v2.x + v2.y}
+	}
 }
 
-interface coord {x: number, y: number}
+interface vec2 {x: number, y: number}
 
 export class rect {
 	x: number
@@ -70,10 +79,10 @@ export class circle {
 	r: number
 	steps: number
 	color: [number, number, number, number]
-	velocity: coord
+	velocity: vec2
 	indices: Array<number>
 
-	constructor(x: number, y: number, r: number, steps: number, color: [number, number, number, number], velocity: coord) {
+	constructor(x: number, y: number, r: number, steps: number, color: [number, number, number, number], velocity: vec2) {
 		this.x = x
 		this.y = y
 		this.r = r
@@ -85,7 +94,7 @@ export class circle {
 	}
 
 	get speed() {
-		return Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2)
+		return v2.magnitude(this.velocity)
 	}
 
 	getIndices(): Array<number> {
@@ -144,8 +153,14 @@ export class circle {
 	}
 
 	collide(other: circle) {
-		const jah = this.velocity
-		this.velocity = {x: other.velocity.x * .8, y: other.velocity.y * .8}
-		other.velocity = {x: jah.x * .8, y: jah.y * .8}
+		const dx = other.x - this.x
+		const dy = other.y - this.y
+		const normCollision = v2.normalize({x: dx, y: dy})
+
+		const thisSpeed = this.speed
+
+		const damping = 0.9
+		this.velocity = { x: damping * other.speed * normCollision.x * -1, y: damping * other.speed * normCollision.y * -1 }
+		other.velocity = { x: damping * thisSpeed * normCollision.x, y: damping * thisSpeed * normCollision.y }
 	}
 }
