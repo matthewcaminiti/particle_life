@@ -1,5 +1,5 @@
 import * as c from './canvas';
-import {rect, circle} from "./geo"
+import {circle, colors} from "./geo"
 import {randInt, randFloat} from "./util"
 
 const main = () => {
@@ -116,33 +116,49 @@ void main() {
 	const circles = [...Array(nCircles)].map((_, i) => {
 		const r = randInt(3, 3)
 		return new circle(
-			randInt(r, gl.canvas.width - r),
-			randInt(r, gl.canvas.height - r),
+			{x: randInt(r, gl.canvas.width - r), y: randInt(r, gl.canvas.height - r)},
 			r,
 			Math.floor(r * 0.8) <= 10 ? 10 : Math.floor(r * 0.8),
-			i % 25 === 0 ? [1, 0, 0, 1] : [0, 0, 1, 1],
-			{x: randFloat(50, 200) * (Math.random() > .5 ? -1 : 1), y: randFloat(50, 200) * (Math.random() > .5 ? -1 : 1)}
+			i % 10 === 0 ? colors.green : colors.blue,
+			/* {x: randFloat(50, 200) * (Math.random() > .5 ? -1 : 1), y: randFloat(50, 200) * (Math.random() > .5 ? -1 : 1)}, */
+			{x: 0, y: 0},
+			50,
 		)
 	})
 
+
 	/* const circles = [ */
 	/* 	new circle( */
-	/* 		400, */
-	/* 		gl.canvas.height/2, */
-	/* 		30, */
+	/* 		{x: 700, y: gl.canvas.height/2}, */
+	/* 		50, */
 	/* 		30*.8, */
-	/* 		[1, 0, 0, 1], */
-	/* 		{x: 50, y: 0} */
+	/* 		colors.green, */
+	/* 		{x: 0, y: 0}, */
+	/* 		250 */
 	/* 	), */
 	/* 	new circle( */
-	/* 		600, */
-	/* 		gl.canvas.height/2, */
-	/* 		30, */
-	/* 		30*.8, */
-	/* 		[0, 0, 1, 1], */
-	/* 		{x: -50, y: 0} */
+	/* 		{x: 900, y: gl.canvas.height/2}, */
+	/* 		50, */
+	/* 		30*.9, */
+	/* 		colors.blue, */
+	/* 		{x: 0, y: 0}, */
+	/* 		250 */
 	/* 	) */
 	/* ] */
+
+	const colorIndices: Record<string, number> = circles.reduce((acc, curr) => {
+		if (acc[curr.color.string] !== undefined) {
+			return acc
+		}
+		acc[curr.color.string] = Object.keys(acc).length
+		return acc
+	}, {} as Record<string, number>)
+	console.log(colorIndices)
+	const behaviourMatrix: Array<Array<number>> = [...Array(Object.keys(colorIndices).length)].map(() => [0])
+
+	// row -> col == row to col
+	behaviourMatrix[colorIndices[colors.blue.string]][colorIndices[colors.green.string]] = 100
+	behaviourMatrix[colorIndices[colors.green.string]][colorIndices[colors.blue.string]] = -100
 
 	gl.useProgram(program)
 
@@ -204,6 +220,8 @@ void main() {
 					...cells[cellIdx-1 + nHorizontalParitions], ...cells[cellIdx + nHorizontalParitions], ...cells[cellIdx+1 + nHorizontalParitions],
 				]
 
+				if (circleIndices.length <= 1) { continue }
+
 				for (let a = 0; a < circleIndices.length; a++) {
 					if (hasCollided[circleIndices[a]]) continue
 
@@ -213,11 +231,17 @@ void main() {
 						if (circleIndices[a] === circleIndices[b] || hasCollided[circleIndices[b]]) continue
 						const _c = circles[circleIndices[b]]
 
-						if (c.doesCollide(Math.abs(deltaTime), _c)) {
+						if (c.isColliding(_c)) {
+						/* if (c.doesCollide(Math.abs(deltaTime), _c)) { */
 							hasCollided[circleIndices[a]] = 1
 							hasCollided[circleIndices[b]] = 1
 							c.collide(_c)
-							break
+						}
+
+						const behaviourFactor = behaviourMatrix[colorIndices[c.color.string]][colorIndices[_c.color.string]]
+						if (c.isAffectedBy(_c) && !isNaN(behaviourFactor) && behaviourFactor !== 0) {
+						/* if (c.doesAffect(deltaTime, _c) && behaviourFactor !== 0) { */
+							c.reactTo(_c, behaviourFactor)
 						}
 					}
 				}
@@ -242,7 +266,7 @@ void main() {
 			gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, stride, offset)
 			gl.enableVertexAttribArray(positionAttributeLocation)
 
-			gl.uniform4f(colorUniformLocation, ...c.color)
+			gl.uniform4f(colorUniformLocation, c.color.x, c.color.y, c.color.z, c.color.w)
 
 			gl.drawArrays(gl.TRIANGLES, offset, c.indices.length)
 		}

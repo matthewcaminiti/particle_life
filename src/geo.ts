@@ -8,14 +8,52 @@ const v2 = {
 	},
 	normalize(v: vec2): vec2 {
 		const mag = v2.magnitude(v)
-		return mag ? {x: v.x / mag, y: v.y / mag} : {x: 0, y: 0}
+		return mag !== 0 ? {x: v.x / mag, y: v.y / mag} : {x: 0, y: 0}
 	},
 	add(v1: vec2, v2: vec2): vec2 {
-		return {x: v1.x + v2.x, y: v2.x + v2.y}
+		return {x: v1.x + v2.x, y: v1.y + v2.y}
+	},
+	sub(v1: vec2, v2: vec2): vec2 {
+		return {x: v1.x - v2.x, y: v1.y - v2.y}
+	},
+	scale(v: vec2, factor: number): vec2 {
+		return {x: v.x * factor, y: v.y * factor}
+	},
+	dist(v1: vec2, v2: vec2): number {
+		return Math.sqrt((v1.y - v2.y) ** 2 + (v1.x - v2.x) ** 2)
 	}
+
 }
 
 interface vec2 {x: number, y: number}
+export class vec4 {
+	x: number
+	y: number
+	z: number
+	w: number
+
+	constructor(x: number, y: number, z: number, w: number) {
+		this.x = x
+		this.y = y
+		this.z = z
+		this.w = w
+	}
+
+	get string(): string {
+		return `${this.x},${this.y},${this.z},${this.w}`
+	}
+}
+
+export const colors = {
+	black: new vec4(0, 0, 0, 1),
+	blue: new vec4(0, 0, 1, 1),
+	green: new vec4(0, 1, 0, 1),
+	cyan: new vec4(0, 1, 1, 1),
+	red: new vec4(1, 0, 0, 1),
+	purple: new vec4(1, 0, 1, 1),
+	yellow: new vec4(1, 1, 0, 1),
+	white: new vec4(1, 1, 1, 1),
+}
 
 export class rect {
 	x: number
@@ -74,24 +112,27 @@ export class rect {
 }
 
 export class circle {
-	x: number
-	y: number
+	pos: vec2
 	r: number
 	steps: number
-	color: [number, number, number, number]
+	color: vec4
 	velocity: vec2
 	indices: Array<number>
+	rAoe: number
 
-	constructor(x: number, y: number, r: number, steps: number, color: [number, number, number, number], velocity: vec2) {
-		this.x = x
-		this.y = y
+	constructor(pos: vec2, r: number, steps: number, color: vec4, velocity: vec2, rAoe: number) {
+		this.pos = pos
 		this.r = r
 		this.steps = steps
 		this.color = color
 		this.velocity = velocity
+		this.rAoe = rAoe
 
 		this.indices = this.getIndices()
 	}
+
+	get x() { return this.pos.x }
+	get y() { return this.pos.y }
 
 	get speed() {
 		return v2.magnitude(this.velocity)
@@ -135,10 +176,46 @@ export class circle {
 		dx = this.velocity.x * deltaTime
 		dy = this.velocity.y * deltaTime
 
-		this.x += dx
-		this.y += dy
+		this.pos.x += dx
+		this.pos.y += dy
 
 		this.indices = this.getIndices()
+		this.velocity = v2.scale(this.velocity, 0.95)
+	}
+
+	isAffectedBy(other: circle) {
+		return v2.dist(other.pos, this.pos) <= (this.rAoe + other.r)
+	}
+
+	doesAffect(deltaTime: number, other: circle) {
+		const nextOtherX = other.x + other.velocity.x * deltaTime
+		const nextOtherY = other.y + other.velocity.y * deltaTime
+
+		const nextThisX = this.x + this.velocity.x * deltaTime
+		const nextThisY = this.y + this.velocity.y * deltaTime
+
+		const dist = Math.sqrt((nextOtherY - nextThisY) ** 2 + (nextOtherX - nextThisX) ** 2)
+		return dist <= (this.rAoe + other.r)
+	}
+
+	reactTo(other: circle, factor: number) {
+		// set other's velocity to magnitude proportional to closeness and factor
+		// don't increment velocity, only set
+		let delta = v2.sub(other.pos, this.pos)
+		let nd = v2.normalize(delta)
+		const proportion = v2.magnitude(delta) / this.rAoe // if on edge of aoe, want minimum effect
+
+		if (factor < 0) {
+			// repulsed
+			nd = v2.scale(nd, -1)
+			factor *= -1
+		}
+
+		this.velocity = {x: nd.x * proportion * factor, y: nd.y * proportion * factor}
+	}
+
+	isColliding(other: circle): boolean {
+		return v2.dist(other.pos, this.pos) <= (other.r + this.r)
 	}
 
 	doesCollide(deltaTime: number, other: circle): boolean {
