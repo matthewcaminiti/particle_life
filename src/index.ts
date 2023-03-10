@@ -1,6 +1,6 @@
 import * as c from './canvas';
 import {circle, colors} from "./geo"
-import {randInt, randFloat} from "./util"
+import {randInt} from "./util"
 
 const main = () => {
 	const canvas = document.querySelector("#canvas") as HTMLCanvasElement | null;
@@ -119,8 +119,7 @@ void main() {
 			{x: randInt(r, gl.canvas.width - r), y: randInt(r, gl.canvas.height - r)},
 			r,
 			Math.floor(r * 0.8) <= 10 ? 10 : Math.floor(r * 0.8),
-			i % 10 === 0 ? colors.green : colors.blue,
-			/* {x: randFloat(50, 200) * (Math.random() > .5 ? -1 : 1), y: randFloat(50, 200) * (Math.random() > .5 ? -1 : 1)}, */
+			i % 3 === 0 ? colors.green : i % 4 === 0 ? colors.red : colors.blue,
 			{x: 0, y: 0},
 			50,
 		)
@@ -153,12 +152,13 @@ void main() {
 		acc[curr.color.string] = Object.keys(acc).length
 		return acc
 	}, {} as Record<string, number>)
-	console.log(colorIndices)
-	const behaviourMatrix: Array<Array<number>> = [...Array(Object.keys(colorIndices).length)].map(() => [0])
 
+	const behaviourMatrix: Array<Array<number>> = [...Array(Object.keys(colorIndices).length)].map(() => [0])
 	// row -> col == row to col
-	behaviourMatrix[colorIndices[colors.blue.string]][colorIndices[colors.green.string]] = 100
+	behaviourMatrix[colorIndices[colors.blue.string]][colorIndices[colors.green.string]] = +100
 	behaviourMatrix[colorIndices[colors.green.string]][colorIndices[colors.blue.string]] = -100
+	behaviourMatrix[colorIndices[colors.green.string]][colorIndices[colors.red.string]] = +100
+	behaviourMatrix[colorIndices[colors.red.string]][colorIndices[colors.green.string]] = -100
 
 	gl.useProgram(program)
 
@@ -272,7 +272,7 @@ void main() {
 		}
 		drawTimeWalkingSum += performance.now() - start
 
-		if(sampleCount >= 10) {
+		if(sampleCount >= 50) {
 			fpsEle.textContent = (fpsWalkingSum / sampleCount).toFixed(2) + " FPS"
 			fpsWalkingSum = 0
 
