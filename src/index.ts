@@ -119,28 +119,28 @@ void main() {
 			{x: randInt(r, gl.canvas.width - r), y: randInt(r, gl.canvas.height - r)},
 			r,
 			Math.floor(r * 0.8) <= 10 ? 10 : Math.floor(r * 0.8),
-			i % 3 === 0 ? colors.green : i % 4 === 0 ? colors.red : i % 5 === 0 ? colors.cyan : colors.blue,
+			i % 3 === 0 ? colors.green : i % 4 === 0 ? colors.red : colors.blue,
 			{x: 0, y: 0},
-			50,
+			25,
 		)
 	})
 
 	/* const circles = [ */
 	/* 	new circle( */
-	/* 		{x: 700, y: gl.canvas.height/2}, */
-	/* 		50, */
+	/* 		{x: 800, y: gl.canvas.height/2}, */
+	/* 		25, */
 	/* 		30*.8, */
 	/* 		colors.green, */
 	/* 		{x: 0, y: 0}, */
-	/* 		250 */
+	/* 		100 */
 	/* 	), */
 	/* 	new circle( */
 	/* 		{x: 900, y: gl.canvas.height/2}, */
-	/* 		50, */
+	/* 		25, */
 	/* 		30*.9, */
 	/* 		colors.blue, */
 	/* 		{x: 0, y: 0}, */
-	/* 		250 */
+	/* 		100 */
 	/* 	) */
 	/* ] */
 
@@ -155,11 +155,11 @@ void main() {
 	const behaviourMatrix: Array<Array<number>> = [...Array(Object.keys(colorIndices).length)].map(() => [0])
 	// row -> col == row to col
 	behaviourMatrix[colorIndices[colors.blue.string]][colorIndices[colors.green.string]] = +100
+	behaviourMatrix[colorIndices[colors.blue.string]][colorIndices[colors.red.string]] = -100
 	behaviourMatrix[colorIndices[colors.green.string]][colorIndices[colors.blue.string]] = -100
 	behaviourMatrix[colorIndices[colors.green.string]][colorIndices[colors.red.string]] = +100
 	behaviourMatrix[colorIndices[colors.red.string]][colorIndices[colors.green.string]] = -100
-	behaviourMatrix[colorIndices[colors.cyan.string]][colorIndices[colors.green.string]] = +100
-	behaviourMatrix[colorIndices[colors.green.string]][colorIndices[colors.cyan.string]] = -100
+	behaviourMatrix[colorIndices[colors.red.string]][colorIndices[colors.blue.string]] = +100
 
 	gl.useProgram(program)
 
@@ -167,12 +167,12 @@ void main() {
 	const resolutionUniformLocation = gl.getUniformLocation(program, "u_resolution")
 	gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
 
-	const maxDiam = circles.reduce((acc, curr) => curr.r > acc ? curr.r : acc, 0) * 2
-	const cellWidth = Math.max(maxDiam, gl.canvas.width/100) // 100, arbitrary ceiling for performance reasons
-	const cellHeight = Math.max(maxDiam, gl.canvas.height/50) // 50, arbitrary ceiling for performance reasons
+	const maxAoeRadius = circles.reduce((acc, curr) => curr.rAoe > acc ? curr.rAoe : acc, 0)
+	const cellWidth = Math.max(maxAoeRadius, gl.canvas.width/100)
+	const cellHeight = Math.max(maxAoeRadius, gl.canvas.height/50)
 	const nHorizontalParitions = Math.floor(gl.canvas.width/cellWidth)
 	const nVerticalPartitions = Math.floor(gl.canvas.height/cellHeight)
-	console.log(`Cells: num: (${nHorizontalParitions}, ${nVerticalPartitions}), size: (${cellWidth}, ${cellHeight})`)
+	console.log(`Cells:\npartitions: (${nHorizontalParitions}, ${nVerticalPartitions})\nsize: (${cellWidth}, ${cellHeight})`)
 
 	let sampleCount = 0
 	let then = 0
@@ -210,7 +210,6 @@ void main() {
 				cells[row * nHorizontalParitions + col].push(i)
 		}
 
-		let hasCollided = Array(circles.length).fill(0)
 		for (let i = 1; i < nHorizontalParitions - 1; i++) {
 			for (let j = 1; j < nVerticalPartitions - 1; j++) {
 				// check every cell's neighbours, get all circle idx's and check collision
@@ -224,26 +223,31 @@ void main() {
 				if (circleIndices.length <= 1) { continue }
 
 				for (let a = 0; a < circleIndices.length; a++) {
-					if (hasCollided[circleIndices[a]]) continue
-
 					const c = circles[circleIndices[a]]
 
+					let sumReactionVec = {x: 0, y: 0}
+					let numReactionVec = 0
 					for (let b = 0; b < circleIndices.length; b++) {
-						if (circleIndices[a] === circleIndices[b] || hasCollided[circleIndices[b]]) continue
+						if (circleIndices[a] === circleIndices[b]) continue
 						const _c = circles[circleIndices[b]]
 
 						if (c.isColliding(_c)) {
-						/* if (c.doesCollide(Math.abs(dt), _c)) { */
-							hasCollided[circleIndices[a]] = 1
-							hasCollided[circleIndices[b]] = 1
 							c.collide(_c)
 						}
 
 						const behaviourFactor = behaviourMatrix[colorIndices[c.color.string]][colorIndices[_c.color.string]]
 						if (c.isAffectedBy(_c) && !isNaN(behaviourFactor) && behaviourFactor !== 0) {
-						/* if (c.doesAffect(dt, _c) && behaviourFactor !== 0) { */
-							c.reactTo(_c, behaviourFactor)
+							const reactionVec = c.reactionTo(_c, behaviourFactor)
+							sumReactionVec.x += reactionVec.x
+							sumReactionVec.y += reactionVec.y
+							numReactionVec++
 						}
+					}
+
+					if (numReactionVec) {
+						sumReactionVec.x += c.velocity.x
+						sumReactionVec.y += c.velocity.y
+						c.velocity = {x: sumReactionVec.x / (numReactionVec+1), y: sumReactionVec.y / (numReactionVec+1)}
 					}
 				}
 			}

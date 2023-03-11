@@ -198,12 +198,11 @@ export class circle {
 		return dist <= (this.rAoe + other.r)
 	}
 
-	reactTo(other: circle, factor: number) {
-		// set other's velocity to magnitude proportional to closeness and factor
-		// don't increment velocity, only set
-		let delta = v2.sub(other.pos, this.pos)
-		let nd = v2.normalize(delta)
-		const proportion = v2.magnitude(delta) / this.rAoe // if on edge of aoe, want minimum effect
+	reactionTo(other: circle, factor: number): vec2 {
+		let d = v2.sub(other.pos, this.pos)
+		let nd = v2.normalize(d)
+		/* const proportion = 1 - (v2.magnitude(d) / this.rAoe) // if on edge of aoe, want minimum effect */
+		const proportion = -1 * (v2.magnitude(d) / this.rAoe) ** 2 + 1
 
 		if (factor < 0) {
 			// repulsed
@@ -211,7 +210,26 @@ export class circle {
 			factor *= -1
 		}
 
-		this.velocity = {x: nd.x * proportion * factor, y: nd.y * proportion * factor}
+		return {x: nd.x * proportion * factor, y: nd.y * proportion * factor}
+	}
+
+	reactTo(other: circle, factor: number) {
+		// set other's velocity to magnitude proportional to closeness and factor
+		// don't increment velocity, only set
+		let d = v2.sub(other.pos, this.pos)
+		let normD = v2.normalize(d)
+		const proportion = 1 - (v2.magnitude(d) / this.rAoe) // if on edge of aoe, want minimum effect
+
+		if (factor < 0) {
+			// repulsed
+			normD = v2.scale(normD, -1)
+			factor *= -1
+		}
+
+		this.velocity = {x: normD.x * proportion * factor, y: normD.y * proportion * factor}
+
+		/* const overlap = Math.abs(v2.magnitude(d) - this.rAoe - other.r) */
+		/* this.pos = v2.add(this.pos, v2.scale(normD, 0.5 * overlap)) */
 	}
 
 	isColliding(other: circle): boolean {
