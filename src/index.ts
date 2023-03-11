@@ -114,17 +114,16 @@ void main() {
 	const nCircles = 1000
 	console.log("Num Circles:", nCircles)
 	const circles = [...Array(nCircles)].map((_, i) => {
-		const r = randInt(3, 3)
+		const r = randInt(2, 2)
 		return new circle(
 			{x: randInt(r, gl.canvas.width - r), y: randInt(r, gl.canvas.height - r)},
 			r,
 			Math.floor(r * 0.8) <= 10 ? 10 : Math.floor(r * 0.8),
-			i % 3 === 0 ? colors.green : i % 4 === 0 ? colors.red : colors.blue,
+			i % 3 === 0 ? colors.green : i % 4 === 0 ? colors.red : i % 5 === 0 ? colors.cyan : colors.blue,
 			{x: 0, y: 0},
 			50,
 		)
 	})
-
 
 	/* const circles = [ */
 	/* 	new circle( */
@@ -159,6 +158,8 @@ void main() {
 	behaviourMatrix[colorIndices[colors.green.string]][colorIndices[colors.blue.string]] = -100
 	behaviourMatrix[colorIndices[colors.green.string]][colorIndices[colors.red.string]] = +100
 	behaviourMatrix[colorIndices[colors.red.string]][colorIndices[colors.green.string]] = -100
+	behaviourMatrix[colorIndices[colors.cyan.string]][colorIndices[colors.green.string]] = +100
+	behaviourMatrix[colorIndices[colors.green.string]][colorIndices[colors.cyan.string]] = -100
 
 	gl.useProgram(program)
 
@@ -177,12 +178,12 @@ void main() {
 	let then = 0
 	const drawScene = (time: number) => {
 		time *= 0.001
-		const deltaTime = time - then
+		const dt = time - then
 		then = time
 
 		sampleCount++
 
-		const fps = 1 / (deltaTime)
+		const fps = 1 / (dt)
 		fpsWalkingSum += fps
 
 		c.resizeCanvasToDisplaySize(canvas)
@@ -232,7 +233,7 @@ void main() {
 						const _c = circles[circleIndices[b]]
 
 						if (c.isColliding(_c)) {
-						/* if (c.doesCollide(Math.abs(deltaTime), _c)) { */
+						/* if (c.doesCollide(Math.abs(dt), _c)) { */
 							hasCollided[circleIndices[a]] = 1
 							hasCollided[circleIndices[b]] = 1
 							c.collide(_c)
@@ -240,7 +241,7 @@ void main() {
 
 						const behaviourFactor = behaviourMatrix[colorIndices[c.color.string]][colorIndices[_c.color.string]]
 						if (c.isAffectedBy(_c) && !isNaN(behaviourFactor) && behaviourFactor !== 0) {
-						/* if (c.doesAffect(deltaTime, _c) && behaviourFactor !== 0) { */
+						/* if (c.doesAffect(dt, _c) && behaviourFactor !== 0) { */
 							c.reactTo(_c, behaviourFactor)
 						}
 					}
@@ -253,7 +254,7 @@ void main() {
 		for (let i = 0; i < circles.length; i ++) {
 			const c = circles[i]
 
-			c.update(Math.abs(deltaTime), gl.canvas.width, gl.canvas.height)
+			c.update(Math.abs(dt), gl.canvas.width, gl.canvas.height)
 
 			gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
 			gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(c.indices), gl.STATIC_DRAW)
@@ -276,12 +277,12 @@ void main() {
 			fpsEle.textContent = (fpsWalkingSum / sampleCount).toFixed(2) + " FPS"
 			fpsWalkingSum = 0
 
-			unknownEle.textContent = `unknown time: ${(deltaTime*1000 - (collisionTimeWalkingSum/sampleCount + drawTimeWalkingSum/sampleCount)).toFixed(2)}ms`
+			unknownEle.textContent = `unknown time: ${(dt*1000 - (collisionTimeWalkingSum/sampleCount + drawTimeWalkingSum/sampleCount)).toFixed(2)}ms`
 
-			collisionEle.textContent = `collision time: ${(collisionTimeWalkingSum/sampleCount).toFixed(2)}ms (${((collisionTimeWalkingSum/sampleCount)/ (deltaTime*1000) * 100).toFixed(2)}%)`
+			collisionEle.textContent = `collision time: ${(collisionTimeWalkingSum/sampleCount).toFixed(2)}ms (${((collisionTimeWalkingSum/sampleCount)/ (dt*1000) * 100).toFixed(2)}%)`
 			collisionTimeWalkingSum = 0
 
-			drawEle.textContent = `draw time: ${(drawTimeWalkingSum/sampleCount).toFixed(2)}ms (${((drawTimeWalkingSum/sampleCount)/ (deltaTime*1000) * 100).toFixed(2)}%)`
+			drawEle.textContent = `draw time: ${(drawTimeWalkingSum/sampleCount).toFixed(2)}ms (${((drawTimeWalkingSum/sampleCount)/ (dt*1000) * 100).toFixed(2)}%)`
 			drawTimeWalkingSum = 0
 
 			sampleCount = 0

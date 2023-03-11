@@ -84,14 +84,14 @@ export class rect {
 		this.nIndices = this.positions.length
 	}
 
-	update(deltaTime: number, w: number, h: number) {
+	update(dt: number, w: number, h: number) {
 		const newPos = (i: number): number => {
 			if (i % 2 == 0) {
-				const dx = this.speed * deltaTime * Math.cos(degToRad(this.directionDeg))
+				const dx = this.speed * dt * Math.cos(degToRad(this.directionDeg))
 				return this.positions[i] + dx
 			}
 
-			const dy = this.speed * deltaTime * Math.sin(degToRad(this.directionDeg))
+			const dy = this.speed * dt * Math.sin(degToRad(this.directionDeg))
 			return this.positions[i] + dy
 		}
 
@@ -155,9 +155,9 @@ export class circle {
 		return indices
 	}
 
-	update(deltaTime: number, w: number, h: number) {
-		let dx = this.velocity.x * deltaTime
-		let dy = this.velocity.y * deltaTime
+	update(dt: number, w: number, h: number) {
+		let dx = this.velocity.x * dt
+		let dy = this.velocity.y * dt
 
 		if (
 			this.x + dx + this.r >= w || // right wall
@@ -173,8 +173,8 @@ export class circle {
 			this.velocity.y *= -1
 		}
 
-		dx = this.velocity.x * deltaTime
-		dy = this.velocity.y * deltaTime
+		dx = this.velocity.x * dt
+		dy = this.velocity.y * dt
 
 		this.pos.x += dx
 		this.pos.y += dy
@@ -187,12 +187,12 @@ export class circle {
 		return v2.dist(other.pos, this.pos) <= (this.rAoe + other.r)
 	}
 
-	doesAffect(deltaTime: number, other: circle) {
-		const nextOtherX = other.x + other.velocity.x * deltaTime
-		const nextOtherY = other.y + other.velocity.y * deltaTime
+	doesAffect(dt: number, other: circle) {
+		const nextOtherX = other.x + other.velocity.x * dt
+		const nextOtherY = other.y + other.velocity.y * dt
 
-		const nextThisX = this.x + this.velocity.x * deltaTime
-		const nextThisY = this.y + this.velocity.y * deltaTime
+		const nextThisX = this.x + this.velocity.x * dt
+		const nextThisY = this.y + this.velocity.y * dt
 
 		const dist = Math.sqrt((nextOtherY - nextThisY) ** 2 + (nextOtherX - nextThisX) ** 2)
 		return dist <= (this.rAoe + other.r)
@@ -218,26 +218,29 @@ export class circle {
 		return v2.dist(other.pos, this.pos) <= (other.r + this.r)
 	}
 
-	doesCollide(deltaTime: number, other: circle): boolean {
+	doesCollide(dt: number, other: circle): boolean {
 		// check if other and this collide after moving
-		const nextOtherX = other.x + other.velocity.x * deltaTime
-		const nextOtherY = other.y + other.velocity.y * deltaTime
+		const nextOtherX = other.x + other.velocity.x * dt
+		const nextOtherY = other.y + other.velocity.y * dt
 
-		const nextThisX = this.x + this.velocity.x * deltaTime
-		const nextThisY = this.y + this.velocity.y * deltaTime
+		const nextThisX = this.x + this.velocity.x * dt
+		const nextThisY = this.y + this.velocity.y * dt
 
 		return Math.sqrt((nextOtherY - nextThisY) ** 2 + (nextOtherX - nextThisX) ** 2) <= (other.r + this.r)
 	}
 
 	collide(other: circle) {
-		const dx = other.x - this.x
-		const dy = other.y - this.y
-		const normCollision = v2.normalize({x: dx, y: dy})
+		const d = v2.sub(other.pos, this.pos)
 
+		const normD = v2.normalize(d)
 		const thisSpeed = this.speed
-
 		const damping = 0.9
-		this.velocity = { x: damping * other.speed * normCollision.x * -1, y: damping * other.speed * normCollision.y * -1 }
-		other.velocity = { x: damping * thisSpeed * normCollision.x, y: damping * thisSpeed * normCollision.y }
+
+		this.velocity = { x: damping * other.speed * normD.x * -1, y: damping * other.speed * normD.y * -1 }
+		other.velocity = { x: damping * thisSpeed * normD.x, y: damping * thisSpeed * normD.y }
+
+		const overlap = Math.abs(v2.magnitude(d) - this.r - other.r)
+		this.pos = v2.add(this.pos, v2.scale(normD, -0.5 * overlap))
+		other.pos = v2.add(other.pos, v2.scale(normD, 0.5 * overlap))
 	}
 }
