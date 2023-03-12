@@ -134,9 +134,10 @@ export class Solver {
 
 						// -- Collision
 						const collisionAxis = v2.sub(verlet.posCurr, _verlet.posCurr)
+						const n = v2.normalize(collisionAxis)
 						const mag = v2.magnitude(collisionAxis)
+
 						if (mag < (verlet.r + _verlet.r)) {
-							const n = v2.normalize(collisionAxis)
 							const delta = verlet.r + _verlet.r - mag
 							const incident = v2.scale(n, 0.5 * delta)
 
@@ -156,11 +157,8 @@ export class Solver {
 						
 						if (!isNaN(v1Tov2Factor) && v1Tov2Factor !== 0) {
 							// v1 is either repulsed or attracted to v2
-							const effectAxis = v2.sub(verlet.posCurr, _verlet.posCurr)
-							const mag = v2.magnitude(effectAxis)
 							if (mag < (verlet.roe + _verlet.r)) {
 								// set accel
-								const n = v2.normalize(collisionAxis)
 								const delta = verlet.roe + _verlet.r - mag
 								const incident = v2.scale(n, -1 * delta * v1Tov2Factor)
 
@@ -171,11 +169,8 @@ export class Solver {
 
 						if (!isNaN(v2Tov1Factor) && v2Tov1Factor !== 0) {
 							// v2 is either repulse or attracted to v1
-							const effectAxis = v2.sub(_verlet.posCurr, verlet.posCurr)
-							const mag = v2.magnitude(effectAxis)
 							if (mag < (verlet.r + _verlet.roe)) {
 								// set accel
-								const n = v2.normalize(collisionAxis)
 								const delta = verlet.r + _verlet.roe - mag
 								const incident = v2.scale(n, 1 * delta * v2Tov1Factor)
 
