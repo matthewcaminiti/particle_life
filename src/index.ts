@@ -78,29 +78,58 @@ const main = () => {
 		const c1 = id?.split("-")[1] ?? ''
 		const c2 = id?.split("-")[2] ?? ''
 
-		let c1Idx = controlPanel.colorIndices[colors[c1].string]
-		let c2Idx = controlPanel.colorIndices[colors[c2].string]
 
 		cell.addEventListener("click", () => {
+			let c1Idx = controlPanel.colorIndices[colors[c1].string]
+			let c2Idx = controlPanel.colorIndices[colors[c2].string]
+
+			const nColors = Object.keys(controlPanel.colorIndices).length
 			if (isNaN(c1Idx)) {
-				const nColors = Object.keys(controlPanel.colorIndices).length
-				controlPanel.behaviourMatrix.map((arr) => arr.push(0))
-				controlPanel.behaviourMatrix.push([...Array(nColors + 1)].map(() => 0))
-				controlPanel.colorIndices[colors[c1].string] = nColors
-				c1Idx = nColors
+				// new addition
+				if (nColors < controlPanel.behaviourMatrix.length) {
+					// one row was previously deleted, re-use it
+					const sorted = Object.values(controlPanel.colorIndices).sort((a, b) => a - b)
+					for (let i = 0; i < sorted.length; i++) {
+						if (i !== sorted[i]) {
+							controlPanel.colorIndices[colors[c1].string] = i
+							c1Idx = i
+							break
+						}
+					}
+				} else {
+					controlPanel.behaviourMatrix = controlPanel.behaviourMatrix.map((arr) => [...arr, 0])
+					controlPanel.behaviourMatrix.push([...Array(nColors + 1)].map(() => 0))
+					controlPanel.colorIndices[colors[c1].string] = nColors
+					c1Idx = nColors
+				}
 
 				const checkbox = document.getElementById(`checkbox-${c1}`) as HTMLInputElement
 				if (checkbox) checkbox.checked = true
 			}
 
-			if (isNaN(c2Idx)) {
+			if (c1 === c2) {
+				c2Idx = c1Idx
+			} else if (isNaN(c2Idx)) {
+				// new addition
 				const nColors = Object.keys(controlPanel.colorIndices).length
-				controlPanel.behaviourMatrix.map((arr) => arr.push(0))
-				controlPanel.behaviourMatrix.push([...Array(nColors + 1)].map(() => 0))
-				controlPanel.colorIndices[colors[c2].string] = nColors
-				c2Idx = nColors
+				if (nColors < controlPanel.behaviourMatrix.length) {
+					// one row was previously deleted, re-use it
+					const sorted = Object.values(controlPanel.colorIndices).sort((a, b) => a - b)
+					for (let i = 0; i < sorted.length; i++) {
+						if (i !== sorted[i]) {
+							controlPanel.colorIndices[colors[c2].string] = i
+							c2Idx = i
+							break
+						}
+					}
+				} else {
+					controlPanel.behaviourMatrix = controlPanel.behaviourMatrix.map((arr) => [...arr, 0])
+					controlPanel.behaviourMatrix.push([...Array(nColors + 1)].map(() => 0))
+					controlPanel.colorIndices[colors[c2].string] = nColors
+					c2Idx = nColors
+				}
 
-				const checkbox = document.getElementById(`checkbox-${c1}`) as HTMLInputElement
+				const checkbox = document.getElementById(`checkbox-${c2}`) as HTMLInputElement
 				if (checkbox) checkbox.checked = true
 			}
 
