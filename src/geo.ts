@@ -278,7 +278,7 @@ export class Verlet {
 	}
 
 	updatePosition(dt: number) {
-		const v = v2.sub(this.posCurr, this.posOld)
+		const v = v2.scale(v2.sub(this.posCurr, this.posOld), 0.95)
 		this.posOld = this.posCurr
 		this.posCurr = v2.add(v2.add(this.posCurr, v), v2.scale(this.a, dt * dt))
 		this.a = {x: 0, y: 0}

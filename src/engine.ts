@@ -15,13 +15,13 @@ export class Solver {
 		this.w = canvasW
 		this.h = canvasH
 		this.verlets = [...Array(nVerlets)].map((_, i) => {
-			const r = randInt(3, 3)
+			const r = randInt(2, 2)
 			const pos = {x: randInt(r*2, canvasW - r*2), y: randInt(r*2, canvasH - r*2)}
 			return new Verlet(
 				pos,
 				pos,
 				r,
-				100,
+				75,
 				i % 2 ? colors.green : colors.blue,
 				{x: 0, y: 0}
 			)

@@ -52,7 +52,7 @@ const main = () => {
 	let drawTimeWalkingSum = 0
 
 	const renderer = new Renderer(gl)
-	const solver = new Solver(renderer.w, renderer.h, 500)
+	const solver = new Solver(renderer.w, renderer.h, 750)
 
 	let sampleCount = 0
 	let then = 0
