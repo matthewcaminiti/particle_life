@@ -1,5 +1,7 @@
 import * as c from './canvas';
 import {Renderer, Solver} from './engine';
+import {initStatWindow, initControlPanel} from './ui'
+import {colors} from "./geo"
 
 const main = () => {
 	const canvas = document.querySelector("#canvas") as HTMLCanvasElement | null;
@@ -16,43 +18,98 @@ const main = () => {
 
 	c.resizeCanvasToDisplaySize(canvas)
 
-	let fpsEle = document.createElement("div")
-	fpsEle.setAttribute("style", "position: fixed; top: 1rem; right: 1rem; color: white; font-weight: bold; background: black;")
-	const body = document.getElementsByTagName("body").item(0)
-	if (body) {
-		body.appendChild(fpsEle)
-		fpsEle.textContent = "00.00 FPS"
-	}
-
-	let fpsWalkingSum = 0
-
-	let unknownEle = document.createElement("div")
-	unknownEle.setAttribute("style", "position: fixed; top: 2rem; right: 1rem; color: white; font-weight: bold; background: black;")
-	if (body) {
-		body.appendChild(unknownEle)
-		unknownEle.textContent = "unknown time: 00.00"
-	}
-
-	let collisionEle = document.createElement("div")
-	collisionEle.setAttribute("style", "position: fixed; top: 3rem; right: 1rem; color: white; font-weight: bold; background: black;")
-	if (body) {
-		body.appendChild(collisionEle)
-		collisionEle.textContent = "collision time: 00.00"
-	}
-
-	let collisionTimeWalkingSum = 0
-
-	let drawEle = document.createElement("div")
-	drawEle.setAttribute("style", "position: fixed; top: 4rem; right: 1rem; color: white; font-weight: bold; background: black;")
-	if (body) {
-		body.appendChild(drawEle)
-		drawEle.textContent = "draw time: 00.00"
-	}
-
-	let drawTimeWalkingSum = 0
+	let numVerlets = 750
+	const stats = initStatWindow()
+	const controlPanel = initControlPanel(numVerlets)
 
 	const renderer = new Renderer(gl)
-	const solver = new Solver(renderer.w, renderer.h, 750)
+	let solver = new Solver(
+		renderer.w,
+		renderer.h,
+		numVerlets,
+		controlPanel.behaviourMatrix,
+		controlPanel.colorIndices)
+
+	document.getElementById("restart-btn")?.addEventListener("click", () => {
+		solver = new Solver(
+			renderer.w,
+			renderer.h,
+			numVerlets,
+			controlPanel.behaviourMatrix,
+			controlPanel.colorIndices)
+	})
+
+	controlPanel.incrButtons.forEach((btn) => {
+		btn.addEventListener("click", () => {
+			numVerlets += btn.textContent ? Number(btn.textContent) : 0
+			controlPanel.nVerletEle.textContent = numVerlets.toString()
+		})
+	})
+
+	controlPanel.colorCheckboxes.forEach((checkbox) => {
+		checkbox.addEventListener("click", () => {
+			const color = checkbox.getAttribute("id")?.split("-")[1] ?? ''
+
+			if (!isNaN(controlPanel.colorIndices[colors[color].string])) {
+				const idx = controlPanel.colorIndices[colors[color].string]
+				controlPanel.behaviourMatrix = controlPanel.behaviourMatrix.map((arr, i) => {
+					if (i === idx) return arr.map(() => 0)
+					return arr.map((val, j) => j === idx ? 0 : val)
+				})
+
+				document.querySelectorAll("td[id^='behaviour-']")?.forEach((cell) => {
+					const id = cell.getAttribute("id")
+					const c1 = id?.split("-")[1] ?? ''
+					const c2 = id?.split("-")[2] ?? ''
+					if (c1 === color || c2 === color) cell.textContent = ""
+				})
+
+				delete controlPanel.colorIndices[colors[color].string]
+			} else {
+				const nColors = Object.keys(controlPanel.colorIndices).length
+				controlPanel.behaviourMatrix.push(Array(nColors + 1).map(() => 0))
+				controlPanel.colorIndices[colors[color].string] = nColors
+			}
+		})
+	})
+
+	document.querySelectorAll("td[id^='behaviour-']")?.forEach((cell) => {
+		const id = cell.getAttribute("id")
+		const c1 = id?.split("-")[1] ?? ''
+		const c2 = id?.split("-")[2] ?? ''
+
+		let c1Idx = controlPanel.colorIndices[colors[c1].string]
+		let c2Idx = controlPanel.colorIndices[colors[c2].string]
+
+		cell.addEventListener("click", () => {
+			if (isNaN(c1Idx)) {
+				const nColors = Object.keys(controlPanel.colorIndices).length
+				controlPanel.behaviourMatrix.map((arr) => arr.push(0))
+				controlPanel.behaviourMatrix.push([...Array(nColors + 1)].map(() => 0))
+				controlPanel.colorIndices[colors[c1].string] = nColors
+				c1Idx = nColors
+
+				const checkbox = document.getElementById(`checkbox-${c1}`) as HTMLInputElement
+				if (checkbox) checkbox.checked = true
+			}
+
+			if (isNaN(c2Idx)) {
+				const nColors = Object.keys(controlPanel.colorIndices).length
+				controlPanel.behaviourMatrix.map((arr) => arr.push(0))
+				controlPanel.behaviourMatrix.push([...Array(nColors + 1)].map(() => 0))
+				controlPanel.colorIndices[colors[c2].string] = nColors
+				c2Idx = nColors
+
+				const checkbox = document.getElementById(`checkbox-${c1}`) as HTMLInputElement
+				if (checkbox) checkbox.checked = true
+			}
+
+			const val = controlPanel.behaviourMatrix[c1Idx][c2Idx]
+			controlPanel.behaviourMatrix[c1Idx][c2Idx] = val === 5 ? -5 : val+1
+			cell.textContent = controlPanel.behaviourMatrix[c1Idx][c2Idx].toString()
+		})
+	})
+
 
 	let sampleCount = 0
 	let then = 0
@@ -64,7 +121,7 @@ const main = () => {
 		sampleCount++
 
 		const fps = 1 / (dt)
-		fpsWalkingSum += fps
+		stats.fpsWalkingSum += fps
 
 		c.resizeCanvasToDisplaySize(canvas)
 		// Tell WebGL how to convert from the clip space values we'll be setting
@@ -77,25 +134,25 @@ const main = () => {
 
 		let start = performance.now()
 		solver.update(dt)
-		collisionTimeWalkingSum += performance.now() - start
+		stats.collisionTimeWalkingSum += performance.now() - start
 
 		start = performance.now()
 		for (let i = 0; i < solver.verlets.length; i++) {
 			renderer.drawVerlet(solver.verlets[i])
 		}
-		drawTimeWalkingSum += performance.now() - start
+		stats.drawTimeWalkingSum += performance.now() - start
 
 		if(sampleCount >= 50) {
-			fpsEle.textContent = (fpsWalkingSum / sampleCount).toFixed(2) + " FPS"
-			fpsWalkingSum = 0
+			stats.fpsEle.textContent = (stats.fpsWalkingSum / sampleCount).toFixed(2)
+			stats.fpsWalkingSum = 0
 
-			unknownEle.textContent = `unknown time: ${(dt*1000 - (collisionTimeWalkingSum/sampleCount + drawTimeWalkingSum/sampleCount)).toFixed(2)}ms`
+			stats.unknownEle.textContent = `${(dt*1000 - (stats.collisionTimeWalkingSum/sampleCount + stats.drawTimeWalkingSum/sampleCount)).toFixed(2)}ms`
 
-			collisionEle.textContent = `collision time: ${(collisionTimeWalkingSum/sampleCount).toFixed(2)}ms (${((collisionTimeWalkingSum/sampleCount)/ (dt*1000) * 100).toFixed(2)}%)`
-			collisionTimeWalkingSum = 0
+			stats.collisionEle.textContent = `${(stats.collisionTimeWalkingSum/sampleCount).toFixed(2)}ms (${((stats.collisionTimeWalkingSum/sampleCount)/ (dt*1000) * 100).toFixed(2)}%)`
+			stats.collisionTimeWalkingSum = 0
 
-			drawEle.textContent = `draw time: ${(drawTimeWalkingSum/sampleCount).toFixed(2)}ms (${((drawTimeWalkingSum/sampleCount)/ (dt*1000) * 100).toFixed(2)}%)`
-			drawTimeWalkingSum = 0
+			stats.drawEle.textContent = `${(stats.drawTimeWalkingSum/sampleCount).toFixed(2)}ms (${((stats.drawTimeWalkingSum/sampleCount)/ (dt*1000) * 100).toFixed(2)}%)`
+			stats.drawTimeWalkingSum = 0
 
 			sampleCount = 0
 		}

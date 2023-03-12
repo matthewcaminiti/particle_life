@@ -14,12 +14,76 @@
 		height: 100%;
 		display: block;
 	}
+
+	.stat-row {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+	}
+
+	.color-matrix-cell {
+		text-align: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		background-color: rgba(255, 255, 255, 0.6);
+		color: black;
+		user-select: none;
+	}
+
 	</style>
 </head>
 <body style="background-color:#18191a; color: white; box-sizing: border-box; height: 100vh; width: 100vw;">
-	<div style="position: absolute; left: 5rem; top: 30rem; background-color:rgba(255,255,255,0.5); padding: 2rem">
-		<button id="restart-btn">Re-run</button>
-		<div>Hey</div>
+	<div style="position: fixed; top: 1rem; right: 1rem; width: 12rem; color: white; background-color: rgba(0, 0, 0, 0.8); font-weight: bold; display: flex; flex-direction: column;">
+		<div class="stat-row">
+			<div id="fps-ele">
+				0.00
+			</div>
+			<div>
+				FPS
+			</div>
+		</div>
+		<div class="stat-row">
+			<div id="collision-ele">
+				0.00
+			</div>
+			<div>
+				solver
+			</div>
+		</div>
+		<div class="stat-row">
+			<div id="draw-ele">
+				0.00
+			</div>
+			<div>
+				render
+			</div>
+		</div>
+		<div class="stat-row">
+			<div id="unknown-ele">
+				0.00
+			</div>
+			<div>
+				unknown
+			</div>
+		</div>
+	</div>
+	<div style="position: absolute; left: 5rem; top: 30rem; background-color:rgba(255,255,255,0.3); padding: 2rem">
+		<div style="display: flex; flex-direction: row; justify-content: center;">
+			<button id="restart-btn">Re-run</button>
+		</div>
+		<div style="display: flex; flex-direction: row; align-items: center;">
+			<button id="incr-btn">-500</button>
+			<button id="incr-btn">-250</button>
+			<button id="incr-btn">-100</button>
+			<div id="num-verlets" style="color: black;"></div>
+			<button id="incr-btn">+100</button>
+			<button id="incr-btn">+250</button>
+			<button id="incr-btn">+500</button>
+		</div>
+		<div style="display: flex; flex-direction: column; align-items: center;">
+			<table id="color-table">
+			</table>
+		</div>
 	</div>
 	<canvas id="canvas" width="400" height="300"></canvas>
 </body>

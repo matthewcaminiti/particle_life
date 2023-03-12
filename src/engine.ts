@@ -1,6 +1,6 @@
 import {createShader, createProgram} from "./canvas"
 import {randInt, degToRad} from "./util"
-import {colors, Verlet, v2} from "./geo"
+import {colors, Verlet, v2, COLOR_NAMES} from "./geo"
 
 export class Solver {
 	w: number
@@ -11,10 +11,18 @@ export class Solver {
 	spaceParition: {cellWidth: number, cellHeight: number, nH: number, nV: number}
 	cells: Array<Array<number>>
 
-	constructor(canvasW: number, canvasH: number, nVerlets: number) {
+	constructor(
+		canvasW: number,
+		canvasH: number,
+		nVerlets: number,
+		behaviourMatrix: Array<Array<number>>,
+		colorIndices: Record<string, number>
+	) {
 		this.w = canvasW
 		this.h = canvasH
-		this.verlets = [...Array(nVerlets)].map((_, i) => {
+
+		const chosenColors = Object.keys(colorIndices)
+		this.verlets = [...Array(nVerlets)].map(() => {
 			const r = randInt(2, 2)
 			const pos = {x: randInt(r*2, canvasW - r*2), y: randInt(r*2, canvasH - r*2)}
 			return new Verlet(
@@ -22,45 +30,16 @@ export class Solver {
 				pos,
 				r,
 				75,
-				i % 2 ? colors.green : colors.blue,
+				colors[COLOR_NAMES[chosenColors[randInt(0, chosenColors.length - 1)]]],
 				{x: 0, y: 0}
 			)
 		})
 
-		/* const p1 = {x: 701, y: canvasH/2} */
-		/* const p2 = {x: 850, y: canvasH/2} */
-		/* this.verlets = [ */
-		/* 		new Verlet( */
-		/* 			p1, */
-		/* 			p1, */
-		/* 			50, */
-		/* 			200, */
-		/* 			colors.green, */
-		/* 			{x: 0, y: 0} */
-		/* 		), */
-		/* 		new Verlet( */
-		/* 			p2, */
-		/* 			p2, */
-		/* 			50, */
-		/* 			200, */
-		/* 			colors.blue, */
-		/* 			{x: 0, y: 0} */
-		/* 		) */
-		/* ] */
+		this.colorIndices = {...colorIndices}
 
-		this.colorIndices = this.verlets.reduce((acc, curr) => {
-			if (acc[curr.color.string] !== undefined) {
-				return acc
-			}
-			acc[curr.color.string] = Object.keys(acc).length
-			return acc
-		}, {} as Record<string, number>)
-
-		this.behaviourMatrix = [...Array(Object.keys(this.colorIndices).length)].map(() => [0])
-		this.behaviourMatrix[this.colorIndices[colors.green.string]][this.colorIndices[colors.green.string]] = .00002
-		this.behaviourMatrix[this.colorIndices[colors.green.string]][this.colorIndices[colors.blue.string]] = .00002
-		this.behaviourMatrix[this.colorIndices[colors.blue.string]][this.colorIndices[colors.green.string]] = -.00002
-		this.behaviourMatrix[this.colorIndices[colors.blue.string]][this.colorIndices[colors.blue.string]] = .00002
+		this.behaviourMatrix = behaviourMatrix.map((arr) => {
+			return arr.map((val) => val * .00001)
+		})
 
 		const maxRoe = this.verlets.reduce((acc, curr) => curr.roe > acc ? curr.roe : acc, 0)
 		const cellWidth = Math.max(maxRoe, canvasW/100) // 100, 50 arbitrary choices for perf

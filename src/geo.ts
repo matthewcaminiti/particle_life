@@ -20,7 +20,6 @@ export const v2 = {
 	dist(v1: vec2, v2: vec2): number {
 		return Math.sqrt((v1.y - v2.y) ** 2 + (v1.x - v2.x) ** 2)
 	}
-
 }
 
 interface vec2 {x: number, y: number}
@@ -41,7 +40,7 @@ export class vec4 {
 	}
 }
 
-export const colors = {
+export const colors: Record<string, vec4> = {
 	black: new vec4(0, 0, 0, 1),
 	blue: new vec4(0, 0, 1, 1),
 	green: new vec4(0, 1, 0, 1),
@@ -50,6 +49,17 @@ export const colors = {
 	purple: new vec4(1, 0, 1, 1),
 	yellow: new vec4(1, 1, 0, 1),
 	white: new vec4(1, 1, 1, 1),
+}
+
+export const COLOR_NAMES = {
+	[colors.black.string]: "black",
+	[colors.blue.string]: "blue",
+	[colors.green.string]: "green",
+	[colors.cyan.string]: "cyan",
+	[colors.red.string]: "red",
+	[colors.purple.string]: "purple",
+	[colors.yellow.string]: "yellow",
+	[colors.white.string]: "white",
 }
 
 export class rect {
