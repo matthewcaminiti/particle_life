@@ -1,8 +1,6 @@
-const degToRad = (deg: number): number => {
-	return deg * Math.PI / 180
-}
+import {degToRad} from "./util"
 
-const v2 = {
+export const v2 = {
 	magnitude(v: vec2): number {
 		return Math.sqrt(v.x ** 2 + v.y ** 2)
 	},
@@ -31,16 +29,15 @@ export class vec4 {
 	y: number
 	z: number
 	w: number
+	string: string
 
 	constructor(x: number, y: number, z: number, w: number) {
 		this.x = x
 		this.y = y
 		this.z = z
 		this.w = w
-	}
+		this.string = `${this.x},${this.y},${this.z},${this.w}`
 
-	get string(): string {
-		return `${this.x},${this.y},${this.z},${this.w}`
 	}
 }
 
@@ -260,5 +257,35 @@ export class circle {
 		const overlap = Math.abs(v2.magnitude(d) - this.r - other.r)
 		this.pos = v2.add(this.pos, v2.scale(normD, -0.5 * overlap))
 		other.pos = v2.add(other.pos, v2.scale(normD, 0.5 * overlap))
+	}
+}
+
+export class Verlet {
+	posCurr: vec2
+	posOld: vec2
+	r: number
+	color: vec4
+	a: vec2
+	roe: number
+
+	constructor(posCurr: vec2, posOld: vec2, r: number, roe: number, color: vec4, a: vec2) {
+		this.posCurr = posCurr
+		this.posOld = posOld
+		this.r = r
+		this.roe = roe
+		this.color = color
+		this.a = a
+	}
+
+	updatePosition(dt: number) {
+		const v = v2.sub(this.posCurr, this.posOld)
+		this.posOld = this.posCurr
+		this.posCurr = v2.add(v2.add(this.posCurr, v), v2.scale(this.a, dt * dt))
+		this.a = {x: 0, y: 0}
+	}
+
+	accelerate(a: vec2) {
+		if (v2.magnitude(this.a) >= 5) return
+		this.a = v2.add(this.a, a)
 	}
 }

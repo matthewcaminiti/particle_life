@@ -9,3 +9,8 @@ export const randInt = (min: number, max: number): number => {
 export const randFloat = (min: number, max: number): number => {
 	return Math.random() * (max - min) + min
 }
+
+export const degToRad = (deg: number): number => {
+	return deg * Math.PI / 180
+}
+
