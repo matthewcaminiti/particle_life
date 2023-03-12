@@ -1,7 +1,5 @@
 import * as c from './canvas';
 import {Renderer, Solver} from './engine';
-import {circle, colors} from "./geo"
-import {randInt} from "./util"
 
 const main = () => {
 	const canvas = document.querySelector("#canvas") as HTMLCanvasElement | null;
@@ -54,7 +52,7 @@ const main = () => {
 	let drawTimeWalkingSum = 0
 
 	const renderer = new Renderer(gl)
-	const solver = new Solver(renderer.w, renderer.h, 100)
+	const solver = new Solver(renderer.w, renderer.h, 500)
 
 	let sampleCount = 0
 	let then = 0

@@ -21,7 +21,7 @@ export class Solver {
 				pos,
 				pos,
 				r,
-				15,
+				100,
 				i % 2 ? colors.green : colors.blue,
 				{x: 0, y: 0}
 			)
@@ -57,8 +57,10 @@ export class Solver {
 		}, {} as Record<string, number>)
 
 		this.behaviourMatrix = [...Array(Object.keys(this.colorIndices).length)].map(() => [0])
-		this.behaviourMatrix[this.colorIndices[colors.green.string]][this.colorIndices[colors.blue.string]] = 1
-		this.behaviourMatrix[this.colorIndices[colors.blue.string]][this.colorIndices[colors.green.string]] = -1
+		this.behaviourMatrix[this.colorIndices[colors.green.string]][this.colorIndices[colors.green.string]] = .00002
+		this.behaviourMatrix[this.colorIndices[colors.green.string]][this.colorIndices[colors.blue.string]] = .00002
+		this.behaviourMatrix[this.colorIndices[colors.blue.string]][this.colorIndices[colors.green.string]] = -.00002
+		this.behaviourMatrix[this.colorIndices[colors.blue.string]][this.colorIndices[colors.blue.string]] = .00002
 
 		const maxRoe = this.verlets.reduce((acc, curr) => curr.roe > acc ? curr.roe : acc, 0)
 		const cellWidth = Math.max(maxRoe, canvasW/100) // 100, 50 arbitrary choices for perf
@@ -69,12 +71,12 @@ export class Solver {
 			nH: Math.ceil(canvasW/cellWidth),
 			nV: Math.ceil(canvasH/cellHeight),
 		}
-		console.log(`Cells:\npartitions: (${this.spaceParition.nH}, ${this.spaceParition.nV})\nsize: (${cellWidth}, ${cellHeight})`)
+		console.log(`~~~Cells~~~\npartitions: (${this.spaceParition.nH}, ${this.spaceParition.nV})\nsize: (${cellWidth}, ${cellHeight})`)
 		this.cells = this.getSpaceParitions()
 	}
 
 	update(dt: number) {
-		let subSteps = 2
+		let subSteps = 1
 		const subDt = dt/subSteps
 
 		for (;subSteps > 0; subSteps--) {
@@ -112,27 +114,19 @@ export class Solver {
 			const verlet = this.verlets[i]
 			// right wall
 			if (verlet.posCurr.x + verlet.r > this.w) {
-				if (verlet.posOld.y === verlet.posCurr.y)
-					verlet.posCurr.y += Math.random()
-				verlet.posCurr.x = this.w - verlet.r - Math.random()
+				verlet.posCurr.x = this.w - verlet.r
 			}
 			// left wall
 			if (verlet.posCurr.x - verlet.r < 0) {
-				if (verlet.posOld.y === verlet.posCurr.y)
-					verlet.posCurr.y += Math.random()
-				verlet.posCurr.x = verlet.r + Math.random()
+				verlet.posCurr.x = verlet.r
 			}
 			// bottom wall
 			if (verlet.posCurr.y + verlet.r > this.h) {
-				if (verlet.posOld.x === verlet.posCurr.x)
-					verlet.posCurr.x += Math.random()
-				verlet.posCurr.y = this.h - verlet.r - Math.random()
+				verlet.posCurr.y = this.h - verlet.r
 			}
 			// top wall
 			if (verlet.posCurr.y - verlet.r < 0) {
-				if (verlet.posOld.x === verlet.posCurr.x)
-					verlet.posCurr.x += Math.random()
-				verlet.posCurr.y = verlet.r + Math.random()
+				verlet.posCurr.y = verlet.r
 			}
 		}
 	}
@@ -189,7 +183,7 @@ export class Solver {
 								// set accel
 								const n = v2.normalize(collisionAxis)
 								const delta = verlet.roe + _verlet.r - mag
-								const incident = v2.scale(n, -0.5 * delta * v1Tov2Factor)
+								const incident = v2.scale(n, -1 * delta * v1Tov2Factor)
 
 								verlet.posCurr = v2.add(verlet.posCurr, incident)
 								/* verlet.accelerate(incident) */
@@ -204,7 +198,7 @@ export class Solver {
 								// set accel
 								const n = v2.normalize(collisionAxis)
 								const delta = verlet.r + _verlet.roe - mag
-								const incident = v2.scale(n, 0.5 * delta * v2Tov1Factor)
+								const incident = v2.scale(n, 1 * delta * v2Tov1Factor)
 
 								_verlet.posCurr = v2.add(_verlet.posCurr, incident)
 								/* _verlet.accelerate(incident) */
@@ -297,7 +291,7 @@ export class Renderer {
 		// Set the resolution uniform
 		const resolutionUniformLocation = gl.getUniformLocation(this.program, "u_resolution")
 		gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
-		console.log(`Resolution: (${gl.canvas.width} x ${gl.canvas.height}) px`)
+		console.log(`~~~Resolution~~~\n(${gl.canvas.width} x ${gl.canvas.height}) px`)
 	}
 
 	get w() {
