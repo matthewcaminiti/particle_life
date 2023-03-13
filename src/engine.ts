@@ -262,6 +262,9 @@ export class Renderer {
 
 		gl.useProgram(this.program)
 
+		// Set the resolution uniform
+		const resolutionUniformLocation = gl.getUniformLocation(this.program, "u_resolution")
+		gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
 		console.log(`~~~Resolution~~~\n(${gl.canvas.width} x ${gl.canvas.height}) px`)
 	}
 
@@ -296,7 +299,7 @@ export class Renderer {
 		}
 
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffers["position"])
-		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(indices), this.gl.DYNAMIC_DRAW)
+		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array(indices), this.gl.STATIC_DRAW)
 
 		this.gl.vertexAttribPointer(
 			this.attributes["a_position"], // location
@@ -306,13 +309,14 @@ export class Renderer {
 			0, // stride (0 = compute from size and type above)
 			0 // offset in buffer
 		)
+
 		this.gl.enableVertexAttribArray(this.attributes["a_position"])
 
 		this.gl.uniform4f(this.uniforms["u_color"], verlet.color.x, verlet.color.y, verlet.color.z, verlet.color.w)
 
 		this.gl.drawArrays(
 			this.gl.TRIANGLES,
-			0, // ofset
+			0, // offset
 			indices.length // num vertices per instance
 		)
 	}

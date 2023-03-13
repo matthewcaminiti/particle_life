@@ -108,12 +108,6 @@ const main = () => {
 		const dt = time - then
 		then = time
 
-		renderer.gl.useProgram(renderer.program)
-
-		const resolutionUniformLocation = gl.getUniformLocation(renderer.program, "u_resolution")
-		renderer.gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
-		/* console.log(`~~~Resolution~~~\n(${gl.canvas.width} x ${gl.canvas.height}) px`) */
-
 		sampleCount++
 
 		const fps = 1 / (dt)
