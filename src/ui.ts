@@ -40,6 +40,7 @@ interface controlPanel {
 	colorCheckboxes: Array<HTMLInputElement>
 	behaviourMatrix: Array<Array<number>>
 	colorIndices: Record<string, number>
+	chosenColors: Array<string>
 }
 
 export const initControlPanel = (numVerlets: number): controlPanel => {
@@ -65,16 +66,20 @@ export const initControlPanel = (numVerlets: number): controlPanel => {
 
 	colorTable.appendChild(header)
 
-	const colorIndices: Record<string, number> = {}
 	const colorCheckboxes: Array<HTMLInputElement> = []
+	const behaviourMatrix: Array<Array<number>> = [...Array(Object.keys(colors).length)]
+		.map(() => [...Array(Object.keys(colors).length)].map(() => 0))
+	const colorIndices: Record<string, number> = Object.entries(colors)
+		.reduce((acc, [_, v4]) => {
+		if (acc[v4.string] !== undefined) return acc
+		acc[v4.string] = Object.keys(acc).length
+		return acc
+	}, {} as Record<string, number>)
+	const chosenColors: Array<string> = []
 
 	Object.values(colors).forEach((color) => {
-		const turnedOn = Math.random() >= .5
-		if (turnedOn) {
-			if (!colorIndices[color.string]) {
-				colorIndices[color.string] = Object.keys(colorIndices).length
-			}
-		}
+		const turnedOn = Math.random() >= .3
+		if (turnedOn) chosenColors.push(color.string)
 
 		const row = document.createElement("tr")
 
@@ -94,6 +99,11 @@ export const initControlPanel = (numVerlets: number): controlPanel => {
 		Object.values(colors).forEach((_color) => {
 			const col = document.createElement("td")
 			col.setAttribute("class", "color-matrix-cell")
+			if (turnedOn) {
+				const val = randInt(-5, 5)
+				behaviourMatrix[colorIndices[color.string]][colorIndices[_color.string]] = val
+				col.textContent = val !== 0 ? val.toString() : ''
+			}
 			col.setAttribute("id", `behaviour-${COLOR_NAMES[color.string]}-${COLOR_NAMES[_color.string]}`)
 			row.appendChild(col)
 		})
@@ -101,20 +111,12 @@ export const initControlPanel = (numVerlets: number): controlPanel => {
 		colorTable.appendChild(row)
 	})
 
-	const behaviourMatrix: Array<Array<number>> = [...Array(Object.keys(colorIndices).length)].map(() => [])
-	Object.entries(colorIndices).forEach(([colorStr, idx]) => {
-		Object.entries(colorIndices).forEach(([_colorStr, _idx]) => {
-			behaviourMatrix[idx][_idx] = randInt(-5, 5)
-			const cell = document.getElementById(`behaviour-${COLOR_NAMES[colorStr]}-${COLOR_NAMES[_colorStr]}`)
-			if (cell) cell.textContent = behaviourMatrix[idx][_idx].toString()
-		})
-	})
-
 	return {
 		nVerletEle,
 		incrButtons,
 		colorCheckboxes,
 		behaviourMatrix,
-		colorIndices
+		colorIndices,
+		chosenColors
 	}
 }

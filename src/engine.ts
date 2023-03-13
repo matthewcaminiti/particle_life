@@ -15,13 +15,13 @@ export class Solver {
 		canvasW: number,
 		canvasH: number,
 		nVerlets: number,
+		chosenColors: Array<string>,
 		behaviourMatrix: Array<Array<number>>,
 		colorIndices: Record<string, number>
 	) {
 		this.w = canvasW
 		this.h = canvasH
 
-		const chosenColors = Object.keys(colorIndices)
 		this.verlets = [...Array(nVerlets)].map(() => {
 			const r = randInt(2, 2)
 			const pos = {x: randInt(r*2, canvasW - r*2), y: randInt(r*2, canvasH - r*2)}

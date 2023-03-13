@@ -20,56 +20,56 @@ const main = () => {
 
 	let numVerlets = 750
 	const stats = initStatWindow()
-	const controlPanel = initControlPanel(numVerlets)
+	const control = initControlPanel(numVerlets)
 
 	const renderer = new Renderer(gl)
 	let solver = new Solver(
 		renderer.w,
 		renderer.h,
 		numVerlets,
-		controlPanel.behaviourMatrix,
-		controlPanel.colorIndices)
+		control.chosenColors,
+		control.behaviourMatrix,
+		control.colorIndices)
 
 	document.getElementById("restart-btn")?.addEventListener("click", () => {
 		solver = new Solver(
 			renderer.w,
 			renderer.h,
 			numVerlets,
-			controlPanel.behaviourMatrix,
-			controlPanel.colorIndices)
+			control.chosenColors,
+			control.behaviourMatrix,
+			control.colorIndices)
 	})
 
-	controlPanel.incrButtons.forEach((btn) => {
+	control.incrButtons.forEach((btn) => {
 		btn.addEventListener("click", () => {
 			numVerlets += btn.textContent ? Number(btn.textContent) : 0
-			controlPanel.nVerletEle.textContent = numVerlets.toString()
+			control.nVerletEle.textContent = numVerlets.toString()
 		})
 	})
 
-	controlPanel.colorCheckboxes.forEach((checkbox) => {
+	control.colorCheckboxes.forEach((checkbox) => {
 		checkbox.addEventListener("click", () => {
 			const color = checkbox.getAttribute("id")?.split("-")[1] ?? ''
 
-			if (!isNaN(controlPanel.colorIndices[colors[color].string])) {
-				const idx = controlPanel.colorIndices[colors[color].string]
-				controlPanel.behaviourMatrix = controlPanel.behaviourMatrix.map((arr, i) => {
-					if (i === idx) return arr.map(() => 0)
-					return arr.map((val, j) => j === idx ? 0 : val)
-				})
+			document.querySelectorAll("td[id^='behaviour-']")?.forEach((cell) => {
+				const id = cell.getAttribute("id")
+				const c1 = id?.split("-")[1] ?? ''
+				const c2 = id?.split("-")[2] ?? ''
+				if (c1 === color || c2 === color) {
+					cell.textContent = ""
+					if (c1 === color)
+						control.behaviourMatrix[control.colorIndices[colors[c1].string]][control.colorIndices[colors[c2].string]] = 0
+					if (c2 === color)
+						control.behaviourMatrix[control.colorIndices[colors[c2].string]][control.colorIndices[colors[c1].string]] = 0
+				}
+			})
 
-				document.querySelectorAll("td[id^='behaviour-']")?.forEach((cell) => {
-					const id = cell.getAttribute("id")
-					const c1 = id?.split("-")[1] ?? ''
-					const c2 = id?.split("-")[2] ?? ''
-					if (c1 === color || c2 === color) cell.textContent = ""
-				})
-
-				delete controlPanel.colorIndices[colors[color].string]
-			} else {
-				const nColors = Object.keys(controlPanel.colorIndices).length
-				controlPanel.behaviourMatrix.push(Array(nColors + 1).map(() => 0))
-				controlPanel.colorIndices[colors[color].string] = nColors
-			}
+			const filtered = control.chosenColors.filter((c) => c !== colors[color].string)
+			if (filtered.length !== control.chosenColors.length)
+				control.chosenColors = filtered
+			else
+				control.chosenColors.push(colors[color].string)
 		})
 	})
 
@@ -78,64 +78,25 @@ const main = () => {
 		const c1 = id?.split("-")[1] ?? ''
 		const c2 = id?.split("-")[2] ?? ''
 
-
 		cell.addEventListener("click", () => {
-			let c1Idx = controlPanel.colorIndices[colors[c1].string]
-			let c2Idx = controlPanel.colorIndices[colors[c2].string]
+			let c1Idx = control.colorIndices[colors[c1].string]
+			let c2Idx = control.colorIndices[colors[c2].string]
 
-			const nColors = Object.keys(controlPanel.colorIndices).length
-			if (isNaN(c1Idx)) {
-				// new addition
-				if (nColors < controlPanel.behaviourMatrix.length) {
-					// one row was previously deleted, re-use it
-					const sorted = Object.values(controlPanel.colorIndices).sort((a, b) => a - b)
-					for (let i = 0; i < sorted.length; i++) {
-						if (i !== sorted[i]) {
-							controlPanel.colorIndices[colors[c1].string] = i
-							c1Idx = i
-							break
-						}
-					}
-				} else {
-					controlPanel.behaviourMatrix = controlPanel.behaviourMatrix.map((arr) => [...arr, 0])
-					controlPanel.behaviourMatrix.push([...Array(nColors + 1)].map(() => 0))
-					controlPanel.colorIndices[colors[c1].string] = nColors
-					c1Idx = nColors
-				}
-
-				const checkbox = document.getElementById(`checkbox-${c1}`) as HTMLInputElement
-				if (checkbox) checkbox.checked = true
+			const c1Checkbox = document.getElementById(`checkbox-${c1}`) as HTMLInputElement
+			if (!c1Checkbox.checked) {
+				c1Checkbox.checked = true
+				control.chosenColors.push(colors[c1].string)
 			}
 
-			if (c1 === c2) {
-				c2Idx = c1Idx
-			} else if (isNaN(c2Idx)) {
-				// new addition
-				const nColors = Object.keys(controlPanel.colorIndices).length
-				if (nColors < controlPanel.behaviourMatrix.length) {
-					// one row was previously deleted, re-use it
-					const sorted = Object.values(controlPanel.colorIndices).sort((a, b) => a - b)
-					for (let i = 0; i < sorted.length; i++) {
-						if (i !== sorted[i]) {
-							controlPanel.colorIndices[colors[c2].string] = i
-							c2Idx = i
-							break
-						}
-					}
-				} else {
-					controlPanel.behaviourMatrix = controlPanel.behaviourMatrix.map((arr) => [...arr, 0])
-					controlPanel.behaviourMatrix.push([...Array(nColors + 1)].map(() => 0))
-					controlPanel.colorIndices[colors[c2].string] = nColors
-					c2Idx = nColors
-				}
-
-				const checkbox = document.getElementById(`checkbox-${c2}`) as HTMLInputElement
-				if (checkbox) checkbox.checked = true
+			const c2Checkbox = document.getElementById(`checkbox-${c2}`) as HTMLInputElement
+			if (!c2Checkbox.checked) {
+				c2Checkbox.checked = true
+				control.chosenColors.push(colors[c2].string)
 			}
 
-			const val = controlPanel.behaviourMatrix[c1Idx][c2Idx]
-			controlPanel.behaviourMatrix[c1Idx][c2Idx] = val === 5 ? -5 : val+1
-			cell.textContent = controlPanel.behaviourMatrix[c1Idx][c2Idx].toString()
+			const val = control.behaviourMatrix[c1Idx][c2Idx]
+			control.behaviourMatrix[c1Idx][c2Idx] = val === 5 ? -5 : val+1
+			cell.textContent = control.behaviourMatrix[c1Idx][c2Idx] !== 0 ? control.behaviourMatrix[c1Idx][c2Idx].toString() : ''
 		})
 	})
 
