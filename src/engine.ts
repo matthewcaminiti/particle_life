@@ -317,7 +317,7 @@ export class Renderer {
 		this.gl.drawArrays(
 			this.gl.TRIANGLES,
 			0, // offset
-			indices.length // num vertices per instance
+			indices.length/2 // num vertices per instance
 		)
 	}
 }
