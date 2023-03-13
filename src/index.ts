@@ -10,7 +10,7 @@ const main = () => {
 		throw new Error("Failed to select canvas DOM element!");
 	}
 
-	const gl = canvas.getContext("webgl2")
+	const gl = canvas.getContext("webgl")
 
 	if (!gl) {
 		throw new Error("Failed to load WebGL context.")
@@ -107,6 +107,12 @@ const main = () => {
 		time *= 0.001
 		const dt = time - then
 		then = time
+
+		renderer.gl.useProgram(renderer.program)
+
+		const resolutionUniformLocation = gl.getUniformLocation(renderer.program, "u_resolution")
+		renderer.gl.uniform2f(resolutionUniformLocation, gl.canvas.width, gl.canvas.height)
+		/* console.log(`~~~Resolution~~~\n(${gl.canvas.width} x ${gl.canvas.height}) px`) */
 
 		sampleCount++
 
