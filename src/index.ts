@@ -10,7 +10,7 @@ const main = () => {
 		throw new Error("Failed to select canvas DOM element!");
 	}
 
-	const gl = canvas.getContext("webgl")
+	const gl = canvas.getContext("webgl2")
 
 	if (!gl) {
 		throw new Error("Failed to load WebGL context.")
