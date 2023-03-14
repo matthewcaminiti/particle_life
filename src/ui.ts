@@ -100,7 +100,7 @@ export const initControlPanel = (numVerlets: number): controlPanel => {
 			const col = document.createElement("td")
 			col.setAttribute("class", "color-matrix-cell")
 			if (turnedOn) {
-				const val = randInt(-5, 5)
+				const val = randInt(-9, 9)
 				behaviourMatrix[colorIndices[color.string]][colorIndices[_color.string]] = val
 				col.textContent = val !== 0 ? val.toString() : ''
 			}

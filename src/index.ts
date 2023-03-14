@@ -95,7 +95,7 @@ const main = () => {
 			}
 
 			const val = control.behaviourMatrix[c1Idx][c2Idx]
-			control.behaviourMatrix[c1Idx][c2Idx] = val === 5 ? -5 : val+1
+			control.behaviourMatrix[c1Idx][c2Idx] = val === 9 ? -9 : val+1
 			cell.textContent = control.behaviourMatrix[c1Idx][c2Idx] !== 0 ? control.behaviourMatrix[c1Idx][c2Idx].toString() : ''
 		})
 	})

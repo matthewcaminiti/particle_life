@@ -37,7 +37,7 @@ export class Solver {
 		this.colorIndices = {...colorIndices}
 
 		this.behaviourMatrix = behaviourMatrix.map((arr) => {
-			return arr.map((val) => val * .000020)
+			return arr.map((val) => val * .00001)
 		})
 
 		const maxRoe = this.verlets.reduce((acc, curr) => curr.roe > acc ? curr.roe : acc, 0)
