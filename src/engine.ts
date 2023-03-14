@@ -37,14 +37,16 @@ export class Solver {
 		this.colorIndices = {...colorIndices}
 
 		this.behaviourMatrix = behaviourMatrix.map((arr) => {
-			return arr.map((val) => val * .000025)
+			return arr.map((val) => val * .000020)
 		})
 
 		const maxRoe = this.verlets.reduce((acc, curr) => curr.roe > acc ? curr.roe : acc, 0)
 		let cellWidth = Math.max(maxRoe, canvasW/100) // 100, 50 arbitrary choices for perf
 		let cellHeight = Math.max(maxRoe, canvasH/50)
+
 		while(Math.ceil(canvasW / cellWidth) % 2 === 0) cellWidth++
 		while(Math.ceil(canvasH / cellHeight) % 2 === 0) cellHeight++
+
 		this.spaceParition = {
 			cellWidth: cellWidth,
 			cellHeight: cellHeight,
