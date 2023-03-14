@@ -9,7 +9,6 @@ export class Solver {
 	colorIndices: Record<string, number>
 	behaviourMatrix: Array<Array<number>>
 	spaceParition: {cellWidth: number, cellHeight: number, nH: number, nV: number}
-	cells: Array<Array<number>>
 
 	constructor(
 		canvasW: number,
@@ -38,20 +37,22 @@ export class Solver {
 		this.colorIndices = {...colorIndices}
 
 		this.behaviourMatrix = behaviourMatrix.map((arr) => {
-			return arr.map((val) => val * .00001)
+			return arr.map((val) => val * .000025)
 		})
 
 		const maxRoe = this.verlets.reduce((acc, curr) => curr.roe > acc ? curr.roe : acc, 0)
-		const cellWidth = Math.max(maxRoe, canvasW/100) // 100, 50 arbitrary choices for perf
-		const cellHeight = Math.max(maxRoe, canvasH/50)
+		let cellWidth = Math.max(maxRoe, canvasW/100) // 100, 50 arbitrary choices for perf
+		let cellHeight = Math.max(maxRoe, canvasH/50)
+		while(Math.ceil(canvasW / cellWidth) % 2 === 0) cellWidth++
+		while(Math.ceil(canvasH / cellHeight) % 2 === 0) cellHeight++
 		this.spaceParition = {
 			cellWidth: cellWidth,
 			cellHeight: cellHeight,
 			nH: Math.ceil(canvasW/cellWidth),
 			nV: Math.ceil(canvasH/cellHeight),
 		}
+
 		console.log(`~~~Cells~~~\npartitions: (${this.spaceParition.nH}, ${this.spaceParition.nV})\nsize: (${cellWidth}, ${cellHeight})`)
-		this.cells = this.getSpaceParitions()
 	}
 
 	update(dt: number) {
@@ -59,37 +60,18 @@ export class Solver {
 		const subDt = dt/subSteps
 
 		for (;subSteps > 0; subSteps--) {
-			this.applyWindowConstraint()
-			this.solveCollisions()
+			const cells = this.applyConstrinatsAndGetParitions()
+			this.solveCollisions(cells)
 			this.updatePositions(subDt)
 		}
-
 	}
 
-	getSpaceParitions(): Array<Array<number>> {
+	applyConstrinatsAndGetParitions(): Array<Array<number>> {
 		const cells: Array<Array<number>> = [
 			...Array(this.spaceParition.nH * this.spaceParition.nV)
 		].map(_ => [])
 
-		for (let i = 0; i < this.verlets.length; i++) {
-			const verlet = this.verlets[i]
-
-			let col = Math.floor(verlet.posCurr.x / this.spaceParition.cellWidth)
-			let row = Math.floor(verlet.posCurr.y / this.spaceParition.cellHeight)
-			cells[row * this.spaceParition.nH + col].push(i)
-		}
-
-		return cells
-	}
-
-	updatePositions(dt: number) {
-		for (let i = 0; i < this.verlets.length; i++) {
-			this.verlets[i].updatePosition(dt)
-		}
-	}
-
-	applyWindowConstraint() {
-		for (let i = 0; i < this.verlets.length; i++) {
+		for (let i =0; i < this.verlets.length; i++) {
 			const verlet = this.verlets[i]
 			// right wall
 			if (verlet.posCurr.x + verlet.r > this.w) {
@@ -107,28 +89,49 @@ export class Solver {
 			if (verlet.posCurr.y - verlet.r < 0) {
 				verlet.posCurr.y = verlet.r
 			}
+
+			let col = Math.floor(verlet.posCurr.x / this.spaceParition.cellWidth)
+			let row = Math.floor(verlet.posCurr.y / this.spaceParition.cellHeight)
+			cells[row * this.spaceParition.nH + col].push(i)
+		}
+
+		return cells
+	}
+
+	updatePositions(dt: number) {
+		for (let i = 0; i < this.verlets.length; i++) {
+			this.verlets[i].updatePosition(dt)
 		}
 	}
 
-	solveCollisions() {
-		this.cells = this.getSpaceParitions()
-
-		for (let i = 1; i < this.spaceParition.nH - 1; i++) {
-			for (let j = 1; j < this.spaceParition.nV - 1; j++) {
+	solveCollisions(cells: Array<Array<number>>) {
+		for (let i = 1; i < this.spaceParition.nH - 1; i += 2) {
+			for (let j = 1; j < this.spaceParition.nV - 1; j += 2) {
 				const cellIdx = j * this.spaceParition.nH + i
 				const verletIndices = [
-					...this.cells[cellIdx-1 - this.spaceParition.nH], ...this.cells[cellIdx - this.spaceParition.nH], ...this.cells[cellIdx+1 - this.spaceParition.nH],
-					...this.cells[cellIdx-1], ...this.cells[cellIdx], ...this.cells[cellIdx+1],
-					...this.cells[cellIdx-1 + this.spaceParition.nH], ...this.cells[cellIdx + this.spaceParition.nH], ...this.cells[cellIdx+1 + this.spaceParition.nH],
+					...cells[cellIdx-1 - this.spaceParition.nH], ...cells[cellIdx - this.spaceParition.nH], ...cells[cellIdx+1 - this.spaceParition.nH],
+					...cells[cellIdx-1], ...cells[cellIdx], ...cells[cellIdx+1],
+					...cells[cellIdx-1 + this.spaceParition.nH], ...cells[cellIdx + this.spaceParition.nH], ...cells[cellIdx+1 + this.spaceParition.nH],
 				]
 
 				if (verletIndices.length <= 1) continue
 
+				const hasReacted: Record<number, Record<number, boolean>> = {}
 				for (let k = 0; k < verletIndices.length; k++) {
-					const verlet = this.verlets[verletIndices[k]]
+					const vk = verletIndices[k]
+					const verlet = this.verlets[vk]
+
+					hasReacted[vk] = {}
 
 					for (let l = 0; l < verletIndices.length; l++) {
-						if (k === l) continue
+						const vl = verletIndices[l]
+						if (
+							k === l ||
+							(hasReacted[vk] && hasReacted[vk][vl]) ||
+							(hasReacted[vl] && hasReacted[vl][vk])
+						) continue
+
+						hasReacted[vk][vl] = true
 
 						const _verlet = this.verlets[verletIndices[l]]
 
