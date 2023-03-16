@@ -1,4 +1,4 @@
-# webgl portfolio
+# particle life
 
 sheeeeeeesh
 
