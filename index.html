@@ -27,6 +27,18 @@
 		justify-content: space-between;
 	}
 
+	.control-panel {
+		position: absolute;
+		left: 0;
+		top: 50%;
+		background-color: rgba(255, 255, 255, 0.3);
+	}
+
+	#control-panel-wrapper {
+		width: 85vw;
+		max-width: 15rem;
+	}
+
 	.color-matrix-cell {
 		text-align: center;
 		width: 1.5rem;
@@ -47,61 +59,96 @@
 		cursor: pointer;
 	}
 
+	#incr-btn {
+		padding: 0;
+	}
+
 	</style>
 </head>
+
 <body style="background-color:#18191a; color: white; box-sizing: border-box; height: 100vh; width: 100vw;">
+
 	<div style="position: fixed; top: 1rem; right: 1rem; width: 12rem; color: white; background-color: rgba(0, 0, 0, 0.8); font-weight: bold; display: flex; flex-direction: column;">
-		<div class="stat-row">
-			<div id="fps-ele">
-				0.00
+		<div id="stat-inner">
+			<div class="stat-row">
+				<div id="fps-ele">
+					0.00
+				</div>
+				<div>
+					FPS
+				</div>
 			</div>
-			<div>
-				FPS
+			<div class="stat-row">
+				<div id="collision-ele">
+					0.00
+				</div>
+				<div>
+					solver
+				</div>
 			</div>
-		</div>
-		<div class="stat-row">
-			<div id="collision-ele">
-				0.00
+			<div class="stat-row">
+				<div id="draw-ele">
+					0.00
+				</div>
+				<div>
+					render
+				</div>
 			</div>
-			<div>
-				solver
+			<div class="stat-row">
+				<div id="unknown-ele">
+					0.00
+				</div>
+				<div>
+					unknown
+				</div>
 			</div>
-		</div>
-		<div class="stat-row">
-			<div id="draw-ele">
-				0.00
-			</div>
-			<div>
-				render
-			</div>
-		</div>
-		<div class="stat-row">
-			<div id="unknown-ele">
-				0.00
-			</div>
-			<div>
-				unknown
-			</div>
-		</div>
-	</div>
-	<div style="position: absolute; left: 5rem; top: 30rem; background-color:rgba(255,255,255,0.3); padding: 2rem">
-		<div style="display: flex; flex-direction: row; justify-content: center;">
-			<button id="restart-btn">Re-run</button>
-		</div>
-		<div style="display: flex; flex-direction: row; align-items: center;">
-			<button id="incr-btn">-500</button>
-			<button id="incr-btn">-250</button>
-			<button id="incr-btn">-100</button>
-			<div id="num-verlets" style="color: black;"></div>
-			<button id="incr-btn">+100</button>
-			<button id="incr-btn">+250</button>
-			<button id="incr-btn">+500</button>
-		</div>
-		<div style="display: flex; flex-direction: column; align-items: center;">
-			<table id="color-table">
-			</table>
 		</div>
 	</div>
+
+	<div class="control-panel">
+
+		<div>
+			<button id="minimize-btn">Hide</button>
+		</div>
+
+		<div id="control-panel-wrapper">
+
+			<div style="display: flex; flex-direction: row; justify-content: center; width: 100%;">
+				<button id="restart-btn">Re-run</button>
+			</div>
+
+			<div style="display: flex; flex-direction: row; align-items: center; justify-content: space-evenly; width: 100%;">
+				<button id="incr-btn">-500</button>
+				<button id="incr-btn">-250</button>
+				<button id="incr-btn">-100</button>
+				<div id="num-verlets" style="color: black; font-weight: bold;"></div>
+				<button id="incr-btn">+100</button>
+				<button id="incr-btn">+250</button>
+				<button id="incr-btn">+500</button>
+			</div>
+
+			<div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+				<table id="color-table"></table>
+			</div>
+
+		</div>
+
+	</div>
+
 	<canvas id="canvas" width="400" height="300"></canvas>
+
+<script lang="ts">
+	let isMinimized = false
+	const minimizeBtn = document.getElementById("minimize-btn")
+	minimizeBtn.addEventListener("click", () => {
+		const wrapper = document.getElementById("control-panel-wrapper")
+		const statInner = document.getElementById("stat-inner")
+		wrapper.setAttribute("style", `display: ${isMinimized ? "block" : "none"}`)
+		statInner.setAttribute("style", `display: ${isMinimized ? "block" : "none"}`)
+		minimizeBtn.textContent = isMinimized ? "Hide" : "Show"
+		isMinimized = !isMinimized
+	})
+</script>
 </body>
+
 </html>
