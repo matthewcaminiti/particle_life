@@ -1,154 +1,285 @@
-<!DOCTYPE html>
-<head>
-	<meta charset="utf-8" />
-	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-	<link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
-	<link rel="icon" sizes="32x32" href="assets/favicon-32x32.png">
-	<link rel="icon" sizes="16x16" href="assets/favicon-16x16.png">
-	<link rel="manifest" href="assets/site.webmanifest">
-	<title>Tito's Particles</title>
-	<script src="./dist/bundle.js" defer></script>
-	<style>
-	html, body {
-		height: 100%;
-		margin: 0;
-	}
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=yes"
+    />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="assets/apple-touch-icon.png"
+    />
+    <link rel="icon" sizes="32x32" href="assets/favicon-32x32.png" />
+    <link rel="icon" sizes="16x16" href="assets/favicon-16x16.png" />
+    <link rel="manifest" href="assets/site.webmanifest" />
+    <title>Tito's Particles</title>
+    <script src="./dist/bundle.js" defer></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
 
-	#canvas {
-		width: 100%;
-		height: 100%;
-		display: block;
-	}
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: monospace;
+      }
 
-	.stat-row {
-		display: flex;
-		flex-direction: row;
-		justify-content: space-between;
-	}
+      #canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
 
-	.control-panel {
-		position: absolute;
-		left: 0;
-		top: 50%;
-		background-color: rgba(255, 255, 255, 0.3);
-	}
+      .stat-row {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+      }
 
-	#control-panel-wrapper {
-		width: 85vw;
-		max-width: 15rem;
-	}
+      /* Standardized info panels */
+      .info-panel {
+        color: white;
+        background-color: rgba(0, 0, 0, 0.85);
+        border: 1px solid #666;
+        font-family: monospace;
+        font-size: 12px;
+        font-weight: bold;
+        padding: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      }
 
-	.color-matrix-cell {
-		text-align: center;
-		width: 1.5rem;
-		height: 1.5rem;
-		background-color: rgba(255, 255, 255, 0.6);
-		color: black;
-		user-select: none;
-	}
+      .info-panel-title {
+        color: #ccc;
+        font-size: 11px;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
 
-	.color-matrix-cell[id^='behaviour-']:hover {
-		opacity: 0.8;
-		cursor: pointer;
-	}
+      /* Button styling for consistent debug aesthetic */
+      button {
+        background-color: #333;
+        color: white;
+        border: 1px solid #666;
+        padding: 4px 8px;
+        margin: 2px;
+        cursor: pointer;
+        font-family: monospace;
+        font-size: 11px;
+        transition: all 0.2s ease;
+      }
 
-	input[type="checkbox"] {
-		width: 100%;
-		height: 100%;
-		cursor: pointer;
-	}
+      button:hover {
+        background-color: #555;
+        border-color: #888;
+      }
 
-	#incr-btn {
-		padding: 0;
-	}
+      button:active {
+        background-color: #222;
+        border-color: #999;
+      }
 
-	</style>
-</head>
+      .control-panel {
+        position: absolute;
+        left: 1rem;
+        bottom: 1rem;
+        background-color: rgba(0, 0, 0, 0.85);
+        border: 1px solid #666;
+        padding: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        font-family: monospace;
+      }
 
-<body style="background-color:#18191a; color: white; box-sizing: border-box; height: 100vh; width: 100vw;">
+      #control-panel-wrapper {
+        color: white;
+      }
 
-	<div style="position: fixed; top: 1rem; right: 1rem; width: 12rem; color: white; background-color: rgba(0, 0, 0, 0.8); font-weight: bold; display: flex; flex-direction: column;">
-		<div id="stat-inner">
-			<div class="stat-row">
-				<div id="fps-ele">
-					0.00
-				</div>
-				<div>
-					FPS
-				</div>
-			</div>
-			<div class="stat-row">
-				<div id="collision-ele">
-					0.00
-				</div>
-				<div>
-					solver
-				</div>
-			</div>
-			<div class="stat-row">
-				<div id="draw-ele">
-					0.00
-				</div>
-				<div>
-					render
-				</div>
-			</div>
-			<div class="stat-row">
-				<div id="unknown-ele">
-					0.00
-				</div>
-				<div>
-					unknown
-				</div>
-			</div>
-		</div>
-	</div>
+      .control-section {
+        margin-bottom: 12px;
+      }
 
-	<div class="control-panel">
+      .control-section-title {
+        color: #ccc;
+        font-size: 11px;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
 
-		<div>
-			<button id="minimize-btn">Hide</button>
-		</div>
+      .color-matrix-cell {
+        text-align: center;
+        width: 2rem;
+        height: 2rem;
+        min-width: 2rem;
+        max-width: 2rem;
+        background-color: rgba(255, 255, 255, 0.8);
+        color: black;
+        user-select: none;
+        border: 1px solid #666;
+        font-family: monospace;
+        font-size: 10px;
+        font-weight: bold;
+        position: relative;
+        box-sizing: border-box;
+      }
 
-		<div id="control-panel-wrapper">
+      .color-matrix-cell[id^='behaviour-']:hover {
+        opacity: 0.8;
+        cursor: pointer;
+        background-color: rgba(255, 255, 255, 0.9);
+      }
 
-			<div style="display: flex; flex-direction: row; justify-content: center; width: 100%;">
-				<button id="restart-btn">Re-run</button>
-			</div>
+      .color-checkbox-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 4px;
+      }
 
-			<div style="display: flex; flex-direction: row; align-items: center; justify-content: space-evenly; width: 100%;">
-				<button id="incr-btn">-500</button>
-				<button id="incr-btn">-250</button>
-				<button id="incr-btn">-100</button>
-				<div id="num-verlets" style="color: black; font-weight: bold;"></div>
-				<button id="incr-btn">+100</button>
-				<button id="incr-btn">+250</button>
-				<button id="incr-btn">+500</button>
-			</div>
+      .color-checkbox-cell input[type='checkbox'] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        z-index: 2;
+        position: relative;
+      }
 
-			<div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
-				<table id="color-table"></table>
-			</div>
+      input[type='checkbox'] {
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+      }
 
-		</div>
+      .particle-count-controls {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        margin-bottom: 8px;
+      }
 
-	</div>
+      .particle-count-display {
+        color: white;
+        font-weight: bold;
+        text-align: center;
+        flex: 1;
+        margin: 0 8px;
+      }
 
-	<canvas id="canvas" width="400" height="300"></canvas>
+      .incr-btn {
+        padding: 6px 12px;
+        font-size: 11px;
+        min-width: 40px;
+      }
 
-<script lang="ts">
-	let isMinimized = false
-	const minimizeBtn = document.getElementById("minimize-btn")
-	minimizeBtn.addEventListener("click", () => {
-		const wrapper = document.getElementById("control-panel-wrapper")
-		const statInner = document.getElementById("stat-inner")
-		wrapper.setAttribute("style", `display: ${isMinimized ? "block" : "none"}`)
-		statInner.setAttribute("style", `display: ${isMinimized ? "block" : "none"}`)
-		minimizeBtn.textContent = isMinimized ? "Hide" : "Show"
-		isMinimized = !isMinimized
-	})
-</script>
-</body>
+      #minimize-btn {
+        margin-bottom: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+      }
 
+      #restart-btn {
+        padding: 8px 16px;
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      #color-table {
+        border-collapse: collapse;
+      }
+
+      #color-table td {
+        padding: 0;
+        border: 1px solid #666;
+      }
+    </style>
+  </head>
+
+  <body
+    style="
+      background-color: #0d1117;
+      color: white;
+      box-sizing: border-box;
+      height: 100vh;
+      width: 100vw;
+    "
+  >
+    <div
+      class="info-panel"
+      style="position: fixed; top: 1rem; right: 1rem; width: 12rem"
+    >
+      <div class="info-panel-title">Performance</div>
+      <div id="stat-inner">
+        <div class="stat-row">
+          <div id="fps-ele">0.00</div>
+          <div>FPS</div>
+        </div>
+        <div class="stat-row">
+          <div id="collision-ele">0.00</div>
+          <div>solver</div>
+        </div>
+        <div class="stat-row">
+          <div id="draw-ele">0.00</div>
+          <div>render</div>
+        </div>
+        <div class="stat-row">
+          <div id="unknown-ele">0.00</div>
+          <div>unknown</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-panel">
+      <button id="minimize-btn">Hide</button>
+
+      <div id="control-panel-wrapper">
+        <div class="control-section">
+          <div class="control-section-title">Simulation</div>
+          <button id="restart-btn">Re-run</button>
+        </div>
+
+        <div class="control-section">
+          <div class="control-section-title">Particle Count</div>
+          <div class="particle-count-controls">
+            <button class="incr-btn">-50</button>
+            <div id="num-verlets" class="particle-count-display"></div>
+            <button class="incr-btn">+50</button>
+          </div>
+        </div>
+
+        <div class="control-section">
+          <div class="control-section-title">Color Matrix</div>
+          <table id="color-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <canvas id="canvas" width="400" height="300"></canvas>
+
+    <script lang="ts">
+      let isMinimized = false;
+      const minimizeBtn = document.getElementById('minimize-btn');
+      minimizeBtn.addEventListener('click', () => {
+        const wrapper = document.getElementById('control-panel-wrapper');
+        const performancePanel = document.querySelector('.info-panel');
+        wrapper.setAttribute(
+          'style',
+          `display: ${isMinimized ? 'block' : 'none'}`,
+        );
+        performancePanel.setAttribute(
+          'style',
+          `position: fixed; top: 1rem; right: 1rem; width: 12rem; display: ${isMinimized ? 'block' : 'none'}`,
+        );
+        minimizeBtn.textContent = isMinimized ? 'Hide' : 'Show';
+        isMinimized = !isMinimized;
+      });
+    </script>
+  </body>
 </html>

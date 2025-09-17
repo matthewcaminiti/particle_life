@@ -14,7 +14,6 @@ sheeeeeeesh
 - using `live-server` to hot-load the local files
 - use `npm run dev` for webpack's hot reload (re-transpiles .ts -> .js)
 
-
 #### References
 
 - [typescript setup with webpack](https://webpack.js.org/guides/typescript/)
